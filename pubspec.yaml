@@ -1,0 +1,31 @@
+name: nylo_installer
+description: CLI tool to create new Nylo Flutter projects. Quickly scaffold production-ready Flutter applications.
+version: 1.0.0
+homepage: https://nylo.dev
+repository: https://github.com/nylo-core/nylo-installer
+issue_tracker: https://github.com/nylo-core/nylo-installer/issues
+documentation: https://github.com/nylo-core/nylo-installer
+funding:
+  - https://github.com/sponsors/agordn52
+topics:
+  - nylo-installer
+  - nylo
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  args: ^2.4.2
+  recase: ^4.1.0
+  path: ^1.9.0
+
+dev_dependencies:
+  lints: ^6.1.0
+  test: ^1.24.0
+
+executables:
+  nylo: nylo
+
+screenshots:
+  - description: Nylo logo.
+    path: screenshots/logo.png
