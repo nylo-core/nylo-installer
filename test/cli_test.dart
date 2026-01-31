@@ -99,9 +99,7 @@ void main() {
         expect(result.exitCode, equals(1));
         expect(result.stderr, contains('Invalid project name'));
       });
-
     });
-
 
     group('help content', () {
       test('help should list available commands', () async {

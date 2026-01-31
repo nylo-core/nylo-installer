@@ -71,7 +71,8 @@ void main() {
         expect(flutterResult.exitCode, isA<int>());
       });
 
-      test('failed prerequisite check should have non-zero exit code', () async {
+      test('failed prerequisite check should have non-zero exit code',
+          () async {
         // Test with a command that definitely doesn't exist
         final result = await ProcessRunner.run(
           'totally_fake_prerequisite_command',

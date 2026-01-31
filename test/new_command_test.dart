@@ -12,9 +12,22 @@ void main() {
       bool isValidProjectName(String name) {
         final validPattern = RegExp(r'^[a-z][a-z0-9_]*$');
         final reserved = [
-          'test', 'dart', 'flutter', 'lib', 'bin', 'build',
-          'android', 'ios', 'web', 'macos', 'windows', 'linux',
-          'assets', 'fonts', 'packages', 'pubspec',
+          'test',
+          'dart',
+          'flutter',
+          'lib',
+          'bin',
+          'build',
+          'android',
+          'ios',
+          'web',
+          'macos',
+          'windows',
+          'linux',
+          'assets',
+          'fonts',
+          'packages',
+          'pubspec',
         ];
         return validPattern.hasMatch(name) && !reserved.contains(name);
       }
@@ -129,7 +142,7 @@ void main() {
         await File(pubspecPath).writeAsString('''
 name: nylo
 description: A Nylo Flutter project.
-version: 1.0.0
+version: 1.0.1
 
 environment:
   sdk: '>=3.0.0 <4.0.0'
@@ -182,8 +195,8 @@ android {
 
       test('should update iOS project.pbxproj bundle identifier', () async {
         // Create mock iOS structure
-        final iosDir = Directory(
-            path.join(tempDir.path, 'ios', 'Runner.xcodeproj'));
+        final iosDir =
+            Directory(path.join(tempDir.path, 'ios', 'Runner.xcodeproj'));
         await iosDir.create(recursive: true);
 
         final pbxprojPath = path.join(iosDir.path, 'project.pbxproj');
@@ -215,7 +228,8 @@ APP_URL=http://localhost
         // Simulate the update logic with ReCase-style title
         final envFile = File(envPath);
         String content = await envFile.readAsString();
-        content = content.replaceAll('APP_NAME="Nylo"', 'APP_NAME="My Awesome App"');
+        content =
+            content.replaceAll('APP_NAME="Nylo"', 'APP_NAME="My Awesome App"');
         await envFile.writeAsString(content);
 
         // Verify
@@ -228,7 +242,8 @@ APP_URL=http://localhost
         // Create a mock .git directory
         final gitDir = Directory(path.join(tempDir.path, '.git'));
         await gitDir.create();
-        await File(path.join(gitDir.path, 'config')).writeAsString('mock git config');
+        await File(path.join(gitDir.path, 'config'))
+            .writeAsString('mock git config');
 
         expect(await gitDir.exists(), isTrue);
 
@@ -248,7 +263,8 @@ APP_URL=http://localhost
       String toSnakeCase(String input) {
         // Simplified snake_case conversion matching recase behavior
         return input
-            .replaceAllMapped(RegExp(r'[A-Z]'), (m) => '_${m.group(0)!.toLowerCase()}')
+            .replaceAllMapped(
+                RegExp(r'[A-Z]'), (m) => '_${m.group(0)!.toLowerCase()}')
             .replaceAll(RegExp(r'^_'), '')
             .replaceAll(RegExp(r'[\s-]+'), '_')
             .toLowerCase();

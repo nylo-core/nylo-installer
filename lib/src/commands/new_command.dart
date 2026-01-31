@@ -6,7 +6,6 @@ import '../utils/validators.dart';
 import '../utils/process_runner.dart';
 import '../constants.dart';
 
-
 /// Handles the "nylo new <project_name>" command
 class NewCommand {
   /// Execute the new project creation
@@ -77,9 +76,22 @@ class NewCommand {
   bool _isValidProjectName(String name) {
     final validPattern = RegExp(r'^[a-z][a-z0-9_]*$');
     final reserved = [
-      'test', 'dart', 'flutter', 'lib', 'bin', 'build',
-      'android', 'ios', 'web', 'macos', 'windows', 'linux',
-      'assets', 'fonts', 'packages', 'pubspec',
+      'test',
+      'dart',
+      'flutter',
+      'lib',
+      'bin',
+      'build',
+      'android',
+      'ios',
+      'web',
+      'macos',
+      'windows',
+      'linux',
+      'assets',
+      'fonts',
+      'packages',
+      'pubspec',
     ];
     return validPattern.hasMatch(name) && !reserved.contains(name);
   }
@@ -139,7 +151,8 @@ class NewCommand {
 
     if (await buildGradleFile.exists()) {
       String content = await buildGradleFile.readAsString();
-      content = content.replaceAll('com.example.nylo', 'com.example.$projectName');
+      content =
+          content.replaceAll('com.example.nylo', 'com.example.$projectName');
       await buildGradleFile.writeAsString(content);
     }
 
@@ -150,7 +163,8 @@ class NewCommand {
 
     if (await buildGradleKtsFile.exists()) {
       String content = await buildGradleKtsFile.readAsString();
-      content = content.replaceAll('com.example.nylo', 'com.example.$projectName');
+      content =
+          content.replaceAll('com.example.nylo', 'com.example.$projectName');
       await buildGradleKtsFile.writeAsString(content);
     }
   }
@@ -167,7 +181,8 @@ class NewCommand {
 
     if (await pbxprojFile.exists()) {
       String content = await pbxprojFile.readAsString();
-      content = content.replaceAll('com.example.nylo', 'com.example.$projectName');
+      content =
+          content.replaceAll('com.example.nylo', 'com.example.$projectName');
       await pbxprojFile.writeAsString(content);
     }
   }

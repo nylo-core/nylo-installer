@@ -1,3 +1,7 @@
+## [1.0.1] - 2026-01-31
+
+* Update screenshots
+
 ## [1.0.0] - 2026-01-31
 
 * Initial release

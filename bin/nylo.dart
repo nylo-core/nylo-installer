@@ -10,9 +10,9 @@ import 'package:nylo_installer/src/constants.dart';
 
 void main(List<String> arguments) async {
   final parser = ArgParser()
-    ..addFlag('help', abbr: 'h', negatable: false, help: 'Show usage information')
-    ..addFlag('version', abbr: 'v', negatable: false, help: 'Show version')
-;
+    ..addFlag('help',
+        abbr: 'h', negatable: false, help: 'Show usage information')
+    ..addFlag('version', abbr: 'v', negatable: false, help: 'Show version');
 
   try {
     final results = parser.parse(arguments);
@@ -40,7 +40,8 @@ void main(List<String> arguments) async {
     // Route to appropriate command
     switch (command) {
       case 'new':
-        final projectArgs = results.rest.length > 1 ? results.rest.sublist(1) : <String>[];
+        final projectArgs =
+            results.rest.length > 1 ? results.rest.sublist(1) : <String>[];
         await NewCommand().run(projectArgs);
         break;
       case 'init':

@@ -56,13 +56,15 @@ void main() {
 
       test('should return false if file does not exist', () async {
         final nonExistentPath = '${tempDir.path}/nonexistent_profile';
-        final result = await ShellDetector.isMetroAliasInstalled(nonExistentPath);
+        final result =
+            await ShellDetector.isMetroAliasInstalled(nonExistentPath);
         expect(result, isFalse);
       });
 
       test('should return false if file exists but has no alias', () async {
         final profilePath = '${tempDir.path}/.zshrc';
-        await File(profilePath).writeAsString('# Some config\nexport PATH=\$PATH:/usr/local/bin\n');
+        await File(profilePath).writeAsString(
+            '# Some config\nexport PATH=\$PATH:/usr/local/bin\n');
 
         final result = await ShellDetector.isMetroAliasInstalled(profilePath);
         expect(result, isFalse);
@@ -70,15 +72,18 @@ void main() {
 
       test('should return true if alias metro= exists', () async {
         final profilePath = '${tempDir.path}/.zshrc';
-        await File(profilePath).writeAsString("alias metro='dart run nylo_framework:main'\n");
+        await File(profilePath)
+            .writeAsString("alias metro='dart run nylo_framework:main'\n");
 
         final result = await ShellDetector.isMetroAliasInstalled(profilePath);
         expect(result, isTrue);
       });
 
-      test('should return true if alias metro with double quotes exists', () async {
+      test('should return true if alias metro with double quotes exists',
+          () async {
         final profilePath = '${tempDir.path}/.zshrc';
-        await File(profilePath).writeAsString('alias metro="dart run nylo_framework:main"\n');
+        await File(profilePath)
+            .writeAsString('alias metro="dart run nylo_framework:main"\n');
 
         final result = await ShellDetector.isMetroAliasInstalled(profilePath);
         expect(result, isTrue);
@@ -135,7 +140,8 @@ alias ll='ls -la'
 
       test('should append alias to existing profile', () async {
         final profilePath = '${tempDir.path}/.zshrc';
-        await File(profilePath).writeAsString('# Existing config\nexport FOO=bar\n');
+        await File(profilePath)
+            .writeAsString('# Existing config\nexport FOO=bar\n');
 
         final config = ShellConfig(
           shellName: 'zsh',

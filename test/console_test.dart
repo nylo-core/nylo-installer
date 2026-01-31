@@ -36,7 +36,8 @@ void main() {
       });
 
       test('writeStepComplete should not throw', () {
-        expect(() => NyloConsole.writeStepComplete('complete'), returnsNormally);
+        expect(
+            () => NyloConsole.writeStepComplete('complete'), returnsNormally);
       });
 
       test('writeHighlight should not throw', () {
@@ -72,4 +73,3 @@ void main() {
     });
   });
 }
-
