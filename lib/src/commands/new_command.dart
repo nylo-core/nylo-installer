@@ -188,8 +188,7 @@ class NewCommand {
 
     if (await pbxprojFile.exists()) {
       String content = await pbxprojFile.readAsString();
-      content =
-          content.replaceAll('com.nylo.ios', 'com.$projectName.ios');
+      content = content.replaceAll('com.nylo.ios', 'com.$projectName.ios');
       await pbxprojFile.writeAsString(content);
     }
   }

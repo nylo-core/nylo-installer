@@ -53,13 +53,13 @@ void main() {
       });
 
       test('writeTaskHeader should not throw', () {
-        expect(
-            () => NyloConsole.writeTaskHeader('Creating project'), returnsNormally);
+        expect(() => NyloConsole.writeTaskHeader('Creating project'),
+            returnsNormally);
       });
 
       test('writeSubtaskPending should not throw', () {
-        expect(
-            () => NyloConsole.writeSubtaskPending('Checking...'), returnsNormally);
+        expect(() => NyloConsole.writeSubtaskPending('Checking...'),
+            returnsNormally);
       });
 
       test('writeSubtaskPending with isFirst should not throw', () {
@@ -69,8 +69,7 @@ void main() {
       });
 
       test('writeSubtaskComplete should not throw', () {
-        expect(
-            () => NyloConsole.writeSubtaskComplete('Done'), returnsNormally);
+        expect(() => NyloConsole.writeSubtaskComplete('Done'), returnsNormally);
       });
     });
 
