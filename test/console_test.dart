@@ -51,6 +51,27 @@ void main() {
       test('writeBanner should not throw', () {
         expect(() => NyloConsole.writeBanner(), returnsNormally);
       });
+
+      test('writeTaskHeader should not throw', () {
+        expect(
+            () => NyloConsole.writeTaskHeader('Creating project'), returnsNormally);
+      });
+
+      test('writeSubtaskPending should not throw', () {
+        expect(
+            () => NyloConsole.writeSubtaskPending('Checking...'), returnsNormally);
+      });
+
+      test('writeSubtaskPending with isFirst should not throw', () {
+        expect(
+            () => NyloConsole.writeSubtaskPending('Checking...', isFirst: true),
+            returnsNormally);
+      });
+
+      test('writeSubtaskComplete should not throw', () {
+        expect(
+            () => NyloConsole.writeSubtaskComplete('Done'), returnsNormally);
+      });
     });
 
     group('ANSI codes', () {

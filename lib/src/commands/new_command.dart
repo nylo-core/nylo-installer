@@ -38,35 +38,42 @@ class NewCommand {
 
     NyloConsole.writeBanner();
     NyloConsole.write('');
-    NyloConsole.writeInfo('Creating new Nylo project: $projectNameSnake');
-    NyloConsole.write('');
+    NyloConsole.writeTaskHeader('Creating new Nylo project: $projectNameSnake');
 
     // Step 1: Validate prerequisites
-    NyloConsole.writeStep('[1/5] Checking prerequisites...');
+    NyloConsole.writeSubtaskPending('Checking prerequisites...', isFirst: true);
     await Validators.checkPrerequisites();
-    NyloConsole.writeStepComplete('Prerequisites verified');
 
     // Step 2: Clone the template repository
     final cloneSpinner = Spinner('');
-    cloneSpinner.start('[2/5] Cloning Nylo template...');
+    cloneSpinner.start('Cloning Nylo template...');
     await _cloneTemplate(projectPath);
     cloneSpinner.stop('Template cloned');
 
     // Step 3: Remove .git folder for fresh start
-    NyloConsole.writeStep('[3/5] Initializing project...');
+    final initSpinner = Spinner('');
+    initSpinner.start('Initializing project...');
     await _removeGitFolder(projectPath);
-    NyloConsole.writeStepComplete('Project initialized');
+    initSpinner.stop('Project initialized');
 
     // Step 4: Update project configuration
-    NyloConsole.writeStep('[4/5] Configuring project...');
+    final configSpinner = Spinner('');
+    configSpinner.start('Configuring project...');
+    await _setupEnvFile(projectPath);
     await _updateProjectName(projectPath, projectNameSnake);
-    NyloConsole.writeStepComplete('Project configured');
+    configSpinner.stop('Project configured');
 
     // Step 5: Run flutter pub get
     final pubGetSpinner = Spinner('');
-    pubGetSpinner.start('[5/5] Installing dependencies...');
+    pubGetSpinner.start('Installing dependencies...');
     await _runPubGet(projectPath);
     pubGetSpinner.stop('Dependencies installed');
+
+    // Step 6: Generate app key
+    final keySpinner = Spinner('');
+    keySpinner.start('Generating app key...');
+    await _generateAppKey(projectPath);
+    keySpinner.stop('App key generated');
 
     // Show success message
     _printSuccessMessage(projectNameSnake);
@@ -152,7 +159,7 @@ class NewCommand {
     if (await buildGradleFile.exists()) {
       String content = await buildGradleFile.readAsString();
       content =
-          content.replaceAll('com.example.nylo', 'com.example.$projectName');
+          content.replaceAll('com.nylo.android', 'com.$projectName.android');
       await buildGradleFile.writeAsString(content);
     }
 
@@ -164,7 +171,7 @@ class NewCommand {
     if (await buildGradleKtsFile.exists()) {
       String content = await buildGradleKtsFile.readAsString();
       content =
-          content.replaceAll('com.example.nylo', 'com.example.$projectName');
+          content.replaceAll('com.nylo.android', 'com.$projectName.android');
       await buildGradleKtsFile.writeAsString(content);
     }
   }
@@ -182,7 +189,7 @@ class NewCommand {
     if (await pbxprojFile.exists()) {
       String content = await pbxprojFile.readAsString();
       content =
-          content.replaceAll('com.example.nylo', 'com.example.$projectName');
+          content.replaceAll('com.nylo.ios', 'com.$projectName.ios');
       await pbxprojFile.writeAsString(content);
     }
   }
@@ -211,6 +218,29 @@ class NewCommand {
 
     if (result.exitCode != 0) {
       NyloConsole.writeWarning('flutter pub get completed with warnings');
+    }
+  }
+
+  /// Copies .env-example to .env
+  Future<void> _setupEnvFile(String projectPath) async {
+    final envExampleFile = File(path.join(projectPath, '.env-example'));
+    final envFile = File(path.join(projectPath, '.env'));
+
+    if (await envExampleFile.exists()) {
+      await envExampleFile.copy(envFile.path);
+    }
+  }
+
+  /// Generates app key using nylo_framework
+  Future<void> _generateAppKey(String projectPath) async {
+    final result = await ProcessRunner.run(
+      'dart',
+      ['run', 'nylo_framework:main', 'make:key'],
+      workingDirectory: projectPath,
+    );
+
+    if (result.exitCode != 0 && result.stderr.trim().isNotEmpty) {
+      NyloConsole.writeWarning('App key generation completed with warnings');
     }
   }
 

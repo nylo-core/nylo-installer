@@ -8,7 +8,7 @@ class Validators {
   static Future<void> checkPrerequisites() async {
     await _checkGit();
     await _checkFlutter();
-    NyloConsole.writeStepComplete('Prerequisites verified');
+    NyloConsole.writeSubtaskComplete('Prerequisites verified');
   }
 
   /// Verify git is installed and accessible

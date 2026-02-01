@@ -1,3 +1,15 @@
+## [1.1.0] - 2026-02-01
+
+### Added
+- Automatic environment file setup (copies `.env-example` to `.env`)
+- App key generation step using `nylo_framework:main make:key`
+- New console UI methods: `writeTaskHeader`, `writeSubtaskPending`, `writeSubtaskComplete`
+
+### Changed
+- Improved console output with task headers and subtask indicators
+- Updated spinner alignment for better visual consistency
+- Updated bundle identifier patterns for Android (`com.nylo.android`) and iOS (`com.nylo.ios`)
+
 ## [1.0.2] - 2026-01-31
 
 * Update screenshots

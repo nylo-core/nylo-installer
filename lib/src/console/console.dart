@@ -15,7 +15,7 @@ class Spinner {
     _message = message;
     _frameIndex = 0;
     _timer = Timer.periodic(const Duration(milliseconds: 80), (_) {
-      stdout.write('\r\x1B[96m${_frames[_frameIndex]} $_message\x1B[0m');
+      stdout.write('\r\x1B[96m  ${_frames[_frameIndex]} $_message\x1B[0m');
       _frameIndex = (_frameIndex + 1) % _frames.length;
     });
   }
@@ -82,6 +82,22 @@ class NyloConsole {
 
   /// Write a completed step (green with checkmark)
   static void writeStepComplete(String message) {
+    stdout.writeln('$_green  ✓ $message$_reset');
+  }
+
+  /// Write the main task header (filled bullet)
+  static void writeTaskHeader(String message) {
+    stdout.writeln('$_yellow● $message$_reset');
+  }
+
+  /// Write a pending subtask (empty checkbox with tree connector)
+  static void writeSubtaskPending(String message, {bool isFirst = false}) {
+    final prefix = isFirst ? '├ □' : '  □';
+    stdout.writeln('$_cyan$prefix $message$_reset');
+  }
+
+  /// Write a completed subtask (checkmark)
+  static void writeSubtaskComplete(String message) {
     stdout.writeln('$_green  ✓ $message$_reset');
   }
 
