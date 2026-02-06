@@ -147,6 +147,9 @@ class NewCommand {
 
     // Update app title
     await _updateAppTitle(projectPath, projectName);
+
+    // Update test file imports
+    await _updateTestImports(projectPath, projectName);
   }
 
   /// Updates Android-specific configuration
@@ -207,6 +210,24 @@ class NewCommand {
     }
   }
 
+  /// Updates test file imports from `import '/` to `import 'package:<name>/`
+  Future<void> _updateTestImports(
+      String projectPath, String projectName) async {
+    final testDir = Directory(path.join(projectPath, 'test'));
+    if (!await testDir.exists()) return;
+
+    await for (final entity in testDir.list(recursive: true)) {
+      if (entity is File && entity.path.endsWith('.dart')) {
+        String content = await entity.readAsString();
+        if (content.contains("import '/")) {
+          content =
+              content.replaceAll("import '/", "import 'package:$projectName/");
+          await entity.writeAsString(content);
+        }
+      }
+    }
+  }
+
   /// Runs flutter pub get in the project directory
   Future<void> _runPubGet(String projectPath) async {
     final result = await ProcessRunner.run(
@@ -237,8 +258,16 @@ class NewCommand {
       ['run', 'nylo_framework:main', 'make:key'],
       workingDirectory: projectPath,
     );
-
     if (result.exitCode != 0 && result.stderr.trim().isNotEmpty) {
+      NyloConsole.writeWarning('App key generation completed with warnings');
+    }
+
+    final resultMakeEnv = await ProcessRunner.run(
+      'dart',
+      ['run', 'nylo_framework:main', 'make:env'],
+      workingDirectory: projectPath,
+    );
+    if (resultMakeEnv.exitCode != 0) {
       NyloConsole.writeWarning('App key generation completed with warnings');
     }
   }

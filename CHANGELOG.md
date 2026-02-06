@@ -1,3 +1,8 @@
+## [1.2.0] - 2026-02-06
+
+### Added
+- Test file import rewriting in NewCommand: updates `import '/` to `import 'package:<project_name>/` when scaffolding new Nylo projects
+
 ## [1.1.0] - 2026-02-01
 
 ### Added
