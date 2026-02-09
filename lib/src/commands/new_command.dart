@@ -177,6 +177,26 @@ class NewCommand {
           content.replaceAll('com.nylo.android', 'com.$projectName.android');
       await buildGradleKtsFile.writeAsString(content);
     }
+
+    // Rename Kotlin source directory from com/nylo/ to com/<projectName>/
+    final kotlinNyloDir = Directory(
+        path.join(projectPath, 'android', 'app', 'src', 'main', 'kotlin', 'com', 'nylo'));
+    if (await kotlinNyloDir.exists()) {
+      final kotlinNewDir = Directory(
+          path.join(projectPath, 'android', 'app', 'src', 'main', 'kotlin', 'com', projectName));
+      await kotlinNyloDir.rename(kotlinNewDir.path);
+    }
+
+    // Update package declaration in MainActivity.kt
+    final mainActivityPath = path.join(
+        projectPath, 'android', 'app', 'src', 'main', 'kotlin', 'com', projectName, 'android', 'MainActivity.kt');
+    final mainActivityFile = File(mainActivityPath);
+    if (await mainActivityFile.exists()) {
+      String content = await mainActivityFile.readAsString();
+      content =
+          content.replaceAll('package com.nylo.android', 'package com.$projectName.android');
+      await mainActivityFile.writeAsString(content);
+    }
   }
 
   /// Updates iOS-specific configuration
