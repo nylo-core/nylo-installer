@@ -1,3 +1,9 @@
+## [1.3.0] - 2026-02-10
+
+### Added
+- Kotlin source directory renaming during project scaffolding (renames `com/nylo/` to `com/<projectName>/`)
+- Automatic `package` declaration update in `MainActivity.kt` to match the new project name
+
 ## [1.2.0] - 2026-02-06
 
 ### Added
