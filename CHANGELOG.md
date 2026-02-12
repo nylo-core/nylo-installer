@@ -1,3 +1,8 @@
+## [1.3.1] - 2026-02-12
+
+### Fixed
+- Use backticks instead of double quotes in `NewCommand` doc comment to prevent angle brackets from being interpreted as HTML (fixes pub points static analysis)
+
 ## [1.3.0] - 2026-02-10
 
 ### Added

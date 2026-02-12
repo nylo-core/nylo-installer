@@ -6,7 +6,7 @@ import '../utils/validators.dart';
 import '../utils/process_runner.dart';
 import '../constants.dart';
 
-/// Handles the "nylo new <project_name>" command
+/// Handles the `nylo new <project_name>` command
 class NewCommand {
   /// Execute the new project creation
   Future<void> run(List<String> arguments) async {
