@@ -1,3 +1,12 @@
+## [1.4.0] - 2026-02-14
+
+### Added
+- Pubspec description rebranding: replaces `A new Nylo Flutter application.` with `A new Flutter application.` in scaffolded projects
+- iOS `RunnerTests` bundle identifier replacement in `project.pbxproj` (`com.nylo.dev.RunnerTests` to `com.<projectName>.ios.RunnerTests`)
+- iOS `Info.plist` display name replacement (updates `Nylo` to project title case name)
+- Android `AndroidManifest.xml` label replacement (updates `android:label="Nylo"` to project title case name)
+- Comprehensive test coverage for all file operations in `NewCommand` (pubspec, Android, iOS, .env, .git removal, test imports)
+
 ## [1.3.1] - 2026-02-12
 
 ### Fixed

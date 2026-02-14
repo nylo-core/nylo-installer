@@ -136,6 +136,10 @@ class NewCommand {
         RegExp(r'^name:\s*\w+', multiLine: true),
         'name: $projectName',
       );
+      content = content.replaceFirst(
+        'description: A new Nylo Flutter application.',
+        'description: A new Flutter application.',
+      );
       await pubspecFile.writeAsString(content);
     }
 
@@ -197,6 +201,18 @@ class NewCommand {
           'package com.nylo.android', 'package com.$projectName.android');
       await mainActivityFile.writeAsString(content);
     }
+
+    // Update android:label in AndroidManifest.xml
+    final manifestPath = path.join(
+        projectPath, 'android', 'app', 'src', 'main', 'AndroidManifest.xml');
+    final manifestFile = File(manifestPath);
+    if (await manifestFile.exists()) {
+      String content = await manifestFile.readAsString();
+      final titleCase = ReCase(projectName).titleCase;
+      content = content.replaceAll(
+          'android:label="Nylo"', 'android:label="$titleCase"');
+      await manifestFile.writeAsString(content);
+    }
   }
 
   /// Updates iOS-specific configuration
@@ -212,7 +228,20 @@ class NewCommand {
     if (await pbxprojFile.exists()) {
       String content = await pbxprojFile.readAsString();
       content = content.replaceAll('com.nylo.ios', 'com.$projectName.ios');
+      content = content.replaceAll(
+          'com.nylo.dev.RunnerTests', 'com.$projectName.ios.RunnerTests');
       await pbxprojFile.writeAsString(content);
+    }
+
+    // Update app display name in Info.plist
+    final infoPlistPath = path.join(projectPath, 'ios', 'Runner', 'Info.plist');
+    final infoPlistFile = File(infoPlistPath);
+    if (await infoPlistFile.exists()) {
+      String content = await infoPlistFile.readAsString();
+      final titleCase = ReCase(projectName).titleCase;
+      content = content.replaceAll(
+          '<string>Nylo</string>', '<string>$titleCase</string>');
+      await infoPlistFile.writeAsString(content);
     }
   }
 

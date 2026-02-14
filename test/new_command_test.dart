@@ -6,9 +6,6 @@ import 'package:test/test.dart';
 void main() {
   group('NewCommand', () {
     group('project name validation', () {
-      // Test project name validation rules
-      // These tests check the validation logic that NewCommand uses
-
       bool isValidProjectName(String name) {
         final validPattern = RegExp(r'^[a-z][a-z0-9_]*$');
         final reserved = [
@@ -136,132 +133,480 @@ void main() {
         }
       });
 
-      test('should update pubspec.yaml project name', () async {
-        // Create a mock pubspec.yaml
-        final pubspecPath = path.join(tempDir.path, 'pubspec.yaml');
-        await File(pubspecPath).writeAsString('''
-name: nylo
-description: A Nylo Flutter project.
-version: 1.0.1
+      group('pubspec.yaml', () {
+        test('should update project name', () async {
+          final pubspecPath = path.join(tempDir.path, 'pubspec.yaml');
+          await File(pubspecPath).writeAsString(
+            'name: nylo\n'
+            'description: A new Nylo Flutter application.\n'
+            'version: 1.0.1\n'
+            '\n'
+            'environment:\n'
+            "  sdk: '>=3.0.0 <4.0.0'\n",
+          );
 
-environment:
-  sdk: '>=3.0.0 <4.0.0'
-''');
+          final pubspecFile = File(pubspecPath);
+          String content = await pubspecFile.readAsString();
+          content = content.replaceFirst(
+            RegExp(r'^name:\s*\w+', multiLine: true),
+            'name: my_awesome_app',
+          );
+          await pubspecFile.writeAsString(content);
 
-        // Simulate the update logic from NewCommand
-        final pubspecFile = File(pubspecPath);
-        String content = await pubspecFile.readAsString();
-        content = content.replaceFirst(
-          RegExp(r'^name:\s*\w+', multiLine: true),
-          'name: my_awesome_app',
-        );
-        await pubspecFile.writeAsString(content);
+          final updatedContent = await pubspecFile.readAsString();
+          expect(updatedContent, contains('name: my_awesome_app'));
+          expect(updatedContent, isNot(contains('name: nylo')));
+        });
 
-        // Verify the update
-        final updatedContent = await pubspecFile.readAsString();
-        expect(updatedContent, contains('name: my_awesome_app'));
-        expect(updatedContent, isNot(contains('name: nylo')));
+        test('should update description', () async {
+          final pubspecPath = path.join(tempDir.path, 'pubspec.yaml');
+          await File(pubspecPath).writeAsString(
+            'name: nylo\n'
+            'description: A new Nylo Flutter application.\n'
+            'version: 1.0.1\n',
+          );
+
+          final pubspecFile = File(pubspecPath);
+          String content = await pubspecFile.readAsString();
+          content = content.replaceFirst(
+            'description: A new Nylo Flutter application.',
+            'description: A new Flutter application.',
+          );
+          await pubspecFile.writeAsString(content);
+
+          final updatedContent = await pubspecFile.readAsString();
+          expect(updatedContent,
+              contains('description: A new Flutter application.'));
+          expect(updatedContent,
+              isNot(contains('description: A new Nylo Flutter application.')));
+        });
+
+        test('should leave description unchanged if not matching', () async {
+          final pubspecPath = path.join(tempDir.path, 'pubspec.yaml');
+          await File(pubspecPath).writeAsString(
+            'name: nylo\n'
+            'description: Some custom description.\n'
+            'version: 1.0.1\n',
+          );
+
+          final pubspecFile = File(pubspecPath);
+          String content = await pubspecFile.readAsString();
+          content = content.replaceFirst(
+            'description: A new Nylo Flutter application.',
+            'description: A new Flutter application.',
+          );
+          await pubspecFile.writeAsString(content);
+
+          final updatedContent = await pubspecFile.readAsString();
+          expect(updatedContent,
+              contains('description: Some custom description.'));
+        });
       });
 
-      test('should update Android build.gradle package name', () async {
-        // Create mock Android structure
-        final androidDir = Directory(path.join(tempDir.path, 'android', 'app'));
-        await androidDir.create(recursive: true);
+      group('Android configuration', () {
+        test('should update build.gradle package name', () async {
+          final androidDir =
+              Directory(path.join(tempDir.path, 'android', 'app'));
+          await androidDir.create(recursive: true);
 
-        final buildGradlePath = path.join(androidDir.path, 'build.gradle');
-        await File(buildGradlePath).writeAsString('''
-android {
-    namespace "com.example.nylo"
-    compileSdkVersion 33
+          final buildGradlePath = path.join(androidDir.path, 'build.gradle');
+          await File(buildGradlePath).writeAsString(
+            'android {\n'
+            '    namespace "com.nylo.android"\n'
+            '    compileSdkVersion 33\n'
+            '\n'
+            '    defaultConfig {\n'
+            '        applicationId "com.nylo.android"\n'
+            '        minSdkVersion 21\n'
+            '    }\n'
+            '}\n',
+          );
 
-    defaultConfig {
-        applicationId "com.example.nylo"
-        minSdkVersion 21
-    }
-}
-''');
+          final buildGradleFile = File(buildGradlePath);
+          String content = await buildGradleFile.readAsString();
+          content =
+              content.replaceAll('com.nylo.android', 'com.my_app.android');
+          await buildGradleFile.writeAsString(content);
 
-        // Simulate the update logic
-        final buildGradleFile = File(buildGradlePath);
-        String content = await buildGradleFile.readAsString();
-        content = content.replaceAll('com.example.nylo', 'com.example.my_app');
-        await buildGradleFile.writeAsString(content);
+          final updatedContent = await buildGradleFile.readAsString();
+          expect(updatedContent, contains('com.my_app.android'));
+          expect(updatedContent, isNot(contains('com.nylo.android')));
+        });
 
-        // Verify
-        final updatedContent = await buildGradleFile.readAsString();
-        expect(updatedContent, contains('com.example.my_app'));
-        expect(updatedContent, isNot(contains('com.example.nylo')));
+        test('should update build.gradle.kts package name', () async {
+          final androidDir =
+              Directory(path.join(tempDir.path, 'android', 'app'));
+          await androidDir.create(recursive: true);
+
+          final ktsPath = path.join(androidDir.path, 'build.gradle.kts');
+          await File(ktsPath).writeAsString(
+            'android {\n'
+            '    namespace = "com.nylo.android"\n'
+            '    defaultConfig {\n'
+            '        applicationId = "com.nylo.android"\n'
+            '    }\n'
+            '}\n',
+          );
+
+          final ktsFile = File(ktsPath);
+          String content = await ktsFile.readAsString();
+          content =
+              content.replaceAll('com.nylo.android', 'com.my_app.android');
+          await ktsFile.writeAsString(content);
+
+          final updatedContent = await ktsFile.readAsString();
+          expect(updatedContent, contains('com.my_app.android'));
+          expect(updatedContent, isNot(contains('com.nylo.android')));
+        });
+
+        test('should rename Kotlin source directory', () async {
+          final kotlinNyloDir = Directory(path.join(tempDir.path, 'android',
+              'app', 'src', 'main', 'kotlin', 'com', 'nylo'));
+          await kotlinNyloDir.create(recursive: true);
+
+          // Create a dummy file inside to verify the move
+          await File(
+                  path.join(kotlinNyloDir.path, 'android', 'MainActivity.kt'))
+              .create(recursive: true);
+
+          final kotlinNewDir = Directory(path.join(tempDir.path, 'android',
+              'app', 'src', 'main', 'kotlin', 'com', 'my_app'));
+          await kotlinNyloDir.rename(kotlinNewDir.path);
+
+          expect(await kotlinNewDir.exists(), isTrue);
+          expect(await kotlinNyloDir.exists(), isFalse);
+          expect(
+            await File(
+                    path.join(kotlinNewDir.path, 'android', 'MainActivity.kt'))
+                .exists(),
+            isTrue,
+          );
+        });
+
+        test('should update MainActivity.kt package declaration', () async {
+          final activityDir = Directory(path.join(tempDir.path, 'android',
+              'app', 'src', 'main', 'kotlin', 'com', 'my_app', 'android'));
+          await activityDir.create(recursive: true);
+
+          final activityPath = path.join(activityDir.path, 'MainActivity.kt');
+          await File(activityPath).writeAsString(
+            'package com.nylo.android\n'
+            '\n'
+            'import io.flutter.embedding.android.FlutterActivity\n'
+            '\n'
+            'class MainActivity: FlutterActivity()\n',
+          );
+
+          final activityFile = File(activityPath);
+          String content = await activityFile.readAsString();
+          content = content.replaceAll(
+              'package com.nylo.android', 'package com.my_app.android');
+          await activityFile.writeAsString(content);
+
+          final updatedContent = await activityFile.readAsString();
+          expect(updatedContent, contains('package com.my_app.android'));
+          expect(updatedContent, isNot(contains('package com.nylo.android')));
+        });
+
+        test('should update AndroidManifest.xml label', () async {
+          final manifestDir = Directory(
+              path.join(tempDir.path, 'android', 'app', 'src', 'main'));
+          await manifestDir.create(recursive: true);
+
+          final manifestPath =
+              path.join(manifestDir.path, 'AndroidManifest.xml');
+          await File(manifestPath).writeAsString(
+            '<manifest xmlns:android="http://schemas.android.com/apk/res/android">\n'
+            '    <application\n'
+            '        android:label="Nylo"\n'
+            '        android:icon="@mipmap/ic_launcher">\n'
+            '    </application>\n'
+            '</manifest>\n',
+          );
+
+          final manifestFile = File(manifestPath);
+          String content = await manifestFile.readAsString();
+          content = content.replaceAll(
+              'android:label="Nylo"', 'android:label="My App"');
+          await manifestFile.writeAsString(content);
+
+          final updatedContent = await manifestFile.readAsString();
+          expect(updatedContent, contains('android:label="My App"'));
+          expect(updatedContent, isNot(contains('android:label="Nylo"')));
+        });
       });
 
-      test('should update iOS project.pbxproj bundle identifier', () async {
-        // Create mock iOS structure
-        final iosDir =
-            Directory(path.join(tempDir.path, 'ios', 'Runner.xcodeproj'));
-        await iosDir.create(recursive: true);
+      group('iOS configuration', () {
+        test('should update project.pbxproj Runner bundle identifier',
+            () async {
+          final iosDir =
+              Directory(path.join(tempDir.path, 'ios', 'Runner.xcodeproj'));
+          await iosDir.create(recursive: true);
 
-        final pbxprojPath = path.join(iosDir.path, 'project.pbxproj');
-        await File(pbxprojPath).writeAsString('''
-PRODUCT_BUNDLE_IDENTIFIER = com.example.nylo;
-INFOPLIST_KEY_CFBundleDisplayName = Nylo;
-''');
+          final pbxprojPath = path.join(iosDir.path, 'project.pbxproj');
+          await File(pbxprojPath).writeAsString(
+            'PRODUCT_BUNDLE_IDENTIFIER = com.nylo.ios;\n'
+            'PRODUCT_NAME = "\$(TARGET_NAME)";\n'
+            'PRODUCT_BUNDLE_IDENTIFIER = com.nylo.ios;\n',
+          );
 
-        // Simulate the update logic
-        final pbxprojFile = File(pbxprojPath);
-        String content = await pbxprojFile.readAsString();
-        content = content.replaceAll('com.example.nylo', 'com.example.my_app');
-        await pbxprojFile.writeAsString(content);
+          final pbxprojFile = File(pbxprojPath);
+          String content = await pbxprojFile.readAsString();
+          content = content.replaceAll('com.nylo.ios', 'com.my_app.ios');
+          await pbxprojFile.writeAsString(content);
 
-        // Verify
-        final updatedContent = await pbxprojFile.readAsString();
-        expect(updatedContent, contains('com.example.my_app'));
-        expect(updatedContent, isNot(contains('com.example.nylo')));
+          final updatedContent = await pbxprojFile.readAsString();
+          expect(updatedContent, contains('com.my_app.ios'));
+          expect(updatedContent, isNot(contains('com.nylo.ios')));
+        });
+
+        test('should update project.pbxproj RunnerTests bundle identifier',
+            () async {
+          final iosDir =
+              Directory(path.join(tempDir.path, 'ios', 'Runner.xcodeproj'));
+          await iosDir.create(recursive: true);
+
+          final pbxprojPath = path.join(iosDir.path, 'project.pbxproj');
+          await File(pbxprojPath).writeAsString(
+            'PRODUCT_BUNDLE_IDENTIFIER = com.nylo.ios;\n'
+            'PRODUCT_BUNDLE_IDENTIFIER = com.nylo.dev.RunnerTests;\n'
+            'PRODUCT_BUNDLE_IDENTIFIER = com.nylo.dev.RunnerTests;\n'
+            'PRODUCT_BUNDLE_IDENTIFIER = com.nylo.dev.RunnerTests;\n',
+          );
+
+          final pbxprojFile = File(pbxprojPath);
+          String content = await pbxprojFile.readAsString();
+          content = content.replaceAll('com.nylo.ios', 'com.my_app.ios');
+          content = content.replaceAll(
+              'com.nylo.dev.RunnerTests', 'com.my_app.ios.RunnerTests');
+          await pbxprojFile.writeAsString(content);
+
+          final updatedContent = await pbxprojFile.readAsString();
+          expect(updatedContent, contains('com.my_app.ios;'));
+          expect(updatedContent, contains('com.my_app.ios.RunnerTests;'));
+          expect(updatedContent, isNot(contains('com.nylo.ios;')));
+          expect(updatedContent, isNot(contains('com.nylo.dev.RunnerTests')));
+        });
+
+        test('should replace all three RunnerTests occurrences', () async {
+          final iosDir =
+              Directory(path.join(tempDir.path, 'ios', 'Runner.xcodeproj'));
+          await iosDir.create(recursive: true);
+
+          final pbxprojPath = path.join(iosDir.path, 'project.pbxproj');
+          await File(pbxprojPath).writeAsString(
+            'PRODUCT_BUNDLE_IDENTIFIER = com.nylo.dev.RunnerTests;\n'
+            'OTHER_SETTING = value;\n'
+            'PRODUCT_BUNDLE_IDENTIFIER = com.nylo.dev.RunnerTests;\n'
+            'ANOTHER_SETTING = value;\n'
+            'PRODUCT_BUNDLE_IDENTIFIER = com.nylo.dev.RunnerTests;\n',
+          );
+
+          final pbxprojFile = File(pbxprojPath);
+          String content = await pbxprojFile.readAsString();
+          content = content.replaceAll(
+              'com.nylo.dev.RunnerTests', 'com.my_app.ios.RunnerTests');
+          await pbxprojFile.writeAsString(content);
+
+          final updatedContent = await pbxprojFile.readAsString();
+          final matches = RegExp('com\\.my_app\\.ios\\.RunnerTests')
+              .allMatches(updatedContent)
+              .length;
+          expect(matches, equals(3));
+          expect(updatedContent, isNot(contains('com.nylo.dev.RunnerTests')));
+        });
+
+        test('should update Info.plist display name', () async {
+          final runnerDir = Directory(path.join(tempDir.path, 'ios', 'Runner'));
+          await runnerDir.create(recursive: true);
+
+          final plistPath = path.join(runnerDir.path, 'Info.plist');
+          await File(plistPath).writeAsString(
+            '<?xml version="1.0" encoding="UTF-8"?>\n'
+            '<plist version="1.0">\n'
+            '<dict>\n'
+            '  <key>CFBundleName</key>\n'
+            '  <string>Nylo</string>\n'
+            '  <key>CFBundleDisplayName</key>\n'
+            '  <string>Nylo</string>\n'
+            '</dict>\n'
+            '</plist>\n',
+          );
+
+          final plistFile = File(plistPath);
+          String content = await plistFile.readAsString();
+          content = content.replaceAll(
+              '<string>Nylo</string>', '<string>My App</string>');
+          await plistFile.writeAsString(content);
+
+          final updatedContent = await plistFile.readAsString();
+          expect(updatedContent, contains('<string>My App</string>'));
+          expect(updatedContent, isNot(contains('<string>Nylo</string>')));
+        });
       });
 
-      test('should update .env app title', () async {
-        final envPath = path.join(tempDir.path, '.env');
-        await File(envPath).writeAsString('''
-APP_NAME="Nylo"
-APP_DEBUG=true
-APP_URL=http://localhost
-''');
+      group('.env configuration', () {
+        test('should update app title with double quotes', () async {
+          final envPath = path.join(tempDir.path, '.env');
+          await File(envPath).writeAsString(
+            'APP_NAME="Nylo"\n'
+            'APP_DEBUG=true\n'
+            'APP_URL=http://localhost\n',
+          );
 
-        // Simulate the update logic with ReCase-style title
-        final envFile = File(envPath);
-        String content = await envFile.readAsString();
-        content =
-            content.replaceAll('APP_NAME="Nylo"', 'APP_NAME="My Awesome App"');
-        await envFile.writeAsString(content);
+          final envFile = File(envPath);
+          String content = await envFile.readAsString();
+          content = content.replaceAll(
+              'APP_NAME="Nylo"', 'APP_NAME="My Awesome App"');
+          await envFile.writeAsString(content);
 
-        // Verify
-        final updatedContent = await envFile.readAsString();
-        expect(updatedContent, contains('APP_NAME="My Awesome App"'));
-        expect(updatedContent, isNot(contains('APP_NAME="Nylo"')));
+          final updatedContent = await envFile.readAsString();
+          expect(updatedContent, contains('APP_NAME="My Awesome App"'));
+          expect(updatedContent, isNot(contains('APP_NAME="Nylo"')));
+        });
+
+        test('should update app title with single quotes', () async {
+          final envPath = path.join(tempDir.path, '.env');
+          await File(envPath).writeAsString(
+            "APP_NAME='Nylo'\n"
+            'APP_DEBUG=true\n',
+          );
+
+          final envFile = File(envPath);
+          String content = await envFile.readAsString();
+          content = content.replaceAll("APP_NAME='Nylo'", "APP_NAME='My App'");
+          await envFile.writeAsString(content);
+
+          final updatedContent = await envFile.readAsString();
+          expect(updatedContent, contains("APP_NAME='My App'"));
+          expect(updatedContent, isNot(contains("APP_NAME='Nylo'")));
+        });
       });
 
-      test('should remove .git folder', () async {
-        // Create a mock .git directory
-        final gitDir = Directory(path.join(tempDir.path, '.git'));
-        await gitDir.create();
-        await File(path.join(gitDir.path, 'config'))
-            .writeAsString('mock git config');
+      group('.env setup', () {
+        test('should copy .env-example to .env', () async {
+          final envExamplePath = path.join(tempDir.path, '.env-example');
+          await File(envExamplePath).writeAsString(
+            'APP_NAME="Nylo"\nAPP_DEBUG=true\n',
+          );
 
-        expect(await gitDir.exists(), isTrue);
+          final envExampleFile = File(envExamplePath);
+          final envFile = File(path.join(tempDir.path, '.env'));
+          await envExampleFile.copy(envFile.path);
 
-        // Simulate removal
-        if (await gitDir.exists()) {
-          await gitDir.delete(recursive: true);
-        }
+          expect(await envFile.exists(), isTrue);
+          final content = await envFile.readAsString();
+          expect(content, contains('APP_NAME="Nylo"'));
+          expect(content, contains('APP_DEBUG=true'));
+        });
+      });
 
-        expect(await gitDir.exists(), isFalse);
+      group('.git removal', () {
+        test('should remove .git folder', () async {
+          final gitDir = Directory(path.join(tempDir.path, '.git'));
+          await gitDir.create();
+          await File(path.join(gitDir.path, 'config'))
+              .writeAsString('mock git config');
+
+          expect(await gitDir.exists(), isTrue);
+
+          if (await gitDir.exists()) {
+            await gitDir.delete(recursive: true);
+          }
+
+          expect(await gitDir.exists(), isFalse);
+        });
+      });
+
+      group('test imports', () {
+        test('should update root-relative imports to package imports',
+            () async {
+          final testDir = Directory(path.join(tempDir.path, 'test'));
+          await testDir.create(recursive: true);
+
+          final testFilePath = path.join(testDir.path, 'widget_test.dart');
+          await File(testFilePath).writeAsString(
+            "import '/app/controllers/home_controller.dart';\n"
+            "import '/resources/pages/home_page.dart';\n"
+            "import 'package:flutter_test/flutter_test.dart';\n",
+          );
+
+          final testFile = File(testFilePath);
+          String content = await testFile.readAsString();
+          content = content.replaceAll("import '/", "import 'package:my_app/");
+          await testFile.writeAsString(content);
+
+          final updatedContent = await testFile.readAsString();
+          expect(
+              updatedContent,
+              contains(
+                  "import 'package:my_app/app/controllers/home_controller.dart'"));
+          expect(
+              updatedContent,
+              contains(
+                  "import 'package:my_app/resources/pages/home_page.dart'"));
+          // Should not touch package imports
+          expect(updatedContent,
+              contains("import 'package:flutter_test/flutter_test.dart'"));
+          expect(updatedContent, isNot(contains("import '/")));
+        });
+
+        test('should update imports in nested test directories', () async {
+          final nestedDir = Directory(path.join(tempDir.path, 'test', 'unit'));
+          await nestedDir.create(recursive: true);
+
+          final testFilePath =
+              path.join(nestedDir.path, 'controller_test.dart');
+          await File(testFilePath).writeAsString(
+            "import '/app/controllers/home_controller.dart';\n",
+          );
+
+          // Simulate recursive list + update
+          final testDir = Directory(path.join(tempDir.path, 'test'));
+          await for (final entity in testDir.list(recursive: true)) {
+            if (entity is File && entity.path.endsWith('.dart')) {
+              String content = await entity.readAsString();
+              if (content.contains("import '/")) {
+                content =
+                    content.replaceAll("import '/", "import 'package:my_app/");
+                await entity.writeAsString(content);
+              }
+            }
+          }
+
+          final updatedContent = await File(testFilePath).readAsString();
+          expect(
+              updatedContent,
+              contains(
+                  "import 'package:my_app/app/controllers/home_controller.dart'"));
+        });
+
+        test('should skip files without root-relative imports', () async {
+          final testDir = Directory(path.join(tempDir.path, 'test'));
+          await testDir.create(recursive: true);
+
+          final testFilePath = path.join(testDir.path, 'clean_test.dart');
+          const originalContent =
+              "import 'package:flutter_test/flutter_test.dart';\n"
+              "import 'package:nylo/main.dart';\n";
+          await File(testFilePath).writeAsString(originalContent);
+
+          final testFile = File(testFilePath);
+          String content = await testFile.readAsString();
+          if (content.contains("import '/")) {
+            content =
+                content.replaceAll("import '/", "import 'package:my_app/");
+            await testFile.writeAsString(content);
+          }
+
+          final updatedContent = await testFile.readAsString();
+          expect(updatedContent, equals(originalContent));
+        });
       });
     });
 
     group('snake_case conversion', () {
-      // Test that various input formats get converted properly
-      // Using recase package behavior
-
       String toSnakeCase(String input) {
-        // Simplified snake_case conversion matching recase behavior
         return input
             .replaceAllMapped(
                 RegExp(r'[A-Z]'), (m) => '_${m.group(0)!.toLowerCase()}')
