@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:nylo_installer/src/commands/clean_command.dart';
 import 'package:nylo_installer/src/commands/init_command.dart';
+import 'package:nylo_installer/src/commands/metro_command.dart';
 import 'package:nylo_installer/src/commands/new_command.dart';
 import 'package:nylo_installer/src/commands/self_update_command.dart';
 import 'package:nylo_installer/src/commands/test_command.dart';
@@ -60,6 +61,11 @@ void main(List<String> arguments) async {
             results.rest.length > 1 ? results.rest.sublist(1) : <String>[];
         await TestCommand().run(testArgs);
         break;
+      case 'metro':
+        final metroArgs =
+            results.rest.length > 1 ? results.rest.sublist(1) : <String>[];
+        await MetroCommand().run(metroArgs);
+        break;
       case 'self-update':
         await SelfUpdateCommand().run();
         break;
@@ -97,6 +103,7 @@ void _printUsage() {
       --ios               Deep clean iOS (remove Pods, re-run pod install)
       --android           Deep clean Android (run gradlew clean)
       --all               Deep clean both iOS and Android
+    metro <command>       Run a metro command (e.g. make:model)
     test                  Format and run Flutter tests
       --no-format         Skip formatting before running tests
       --filter=<pattern>  Filter tests by name
@@ -117,6 +124,7 @@ void _printUsage() {
     nylo clean --all
     nylo test
     nylo test --filter "login" --coverage
+    nylo metro make:model User
     nylo self-update
 
   Documentation: ${Constants.docsUrl}

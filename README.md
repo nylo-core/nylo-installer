@@ -20,6 +20,7 @@ Commands:
     --ios               Deep clean iOS (remove Pods, re-run pod install)
     --android           Deep clean Android (run gradlew clean)
     --all               Deep clean both iOS and Android
+  metro <command>       Run a metro command (e.g. make:model)
   test                  Format and run Flutter tests
     --no-format         Skip formatting before running tests
     --filter=<pattern>  Filter tests by name
@@ -96,6 +97,18 @@ nylo test --coverage               # Collect code coverage
 nylo test --path integration_test  # Specify test directory
 nylo test --filter "auth" --coverage
 ```
+
+### `nylo metro <command>`
+
+Run metro commands without needing the metro alias:
+
+```bash
+nylo metro make:model User
+nylo metro make:page HomePage
+nylo metro make:controller HomeController
+```
+
+This runs `dart run nylo_framework:main <command>` behind the scenes.
 
 ### `nylo self-update`
 

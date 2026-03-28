@@ -1,3 +1,11 @@
+## [1.6.0] - 2026-03-28
+
+### Added
+- `nylo metro <command>` command: run metro commands via `dart run nylo_framework:main` (e.g. `nylo metro make:model User`)
+
+### Fixed
+- Self-update command: use plain `write()` instead of `writeSuccess()` for the "Updated nylo_installer" confirmation message to remove misleading `[SUCCESS]` prefix
+
 ## [1.5.3] - 2026-03-28
 
 ### Changed

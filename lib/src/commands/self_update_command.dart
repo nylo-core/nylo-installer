@@ -50,6 +50,6 @@ class SelfUpdateCommand {
       exit(1);
     }
 
-    NyloConsole.writeSuccess('Updated nylo_installer to $latestVersion');
+    NyloConsole.write('Updated nylo_installer to $latestVersion');
   }
 }
