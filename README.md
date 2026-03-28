@@ -17,6 +17,14 @@ Commands:
   new <project_name>    Create a new Nylo project
   init                  Set up the Metro CLI alias
   clean                 Run flutter clean and flutter pub get
+    --ios               Deep clean iOS (remove Pods, re-run pod install)
+    --android           Deep clean Android (run gradlew clean)
+    --all               Deep clean both iOS and Android
+  test                  Format and run Flutter tests
+    --no-format         Skip formatting before running tests
+    --filter=<pattern>  Filter tests by name
+    --coverage          Collect code coverage
+    --path=<dir>        Test directory path (default: test)
 
 Options:
   -h, --help            Show usage information
@@ -61,6 +69,32 @@ nylo clean
 This runs:
 1. `flutter clean` - Removes build artifacts
 2. `flutter pub get` - Reinstalls dependencies
+
+Use platform flags for deep cleaning:
+
+```bash
+nylo clean --ios       # Deep clean iOS (removes Pods, .symlinks, Podfile.lock, re-runs pod install)
+nylo clean --android   # Deep clean Android (runs gradlew clean)
+nylo clean --all       # Deep clean both iOS and Android
+```
+
+### `nylo test`
+
+Format and run Flutter tests with pretty output:
+
+```bash
+nylo test
+```
+
+Options:
+
+```bash
+nylo test --no-format              # Skip formatting before running tests
+nylo test --filter "login"         # Filter tests by name
+nylo test --coverage               # Collect code coverage
+nylo test --path integration_test  # Specify test directory
+nylo test --filter "auth" --coverage
+```
 
 ## Metro CLI
 

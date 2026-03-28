@@ -1,3 +1,23 @@
+## [1.5.0] - 2026-03-28
+
+### Added
+- `nylo self-update` command: updates nylo_installer to the latest version from pub.dev
+- Automatic update detection: shows a styled banner after any command when a newer version is available
+- Version check caching in `~/.nylo/version_cache.json` with 24-hour TTL
+- 2-second HTTP timeout for version checks — network failures are silently ignored
+- `nylo test` command: format and run Flutter tests with pretty JSON output, per-test timing, and aggregated pass/fail summary
+- `nylo test` flags: `--no-format`, `--filter=<pattern>`, `--coverage`, `--path=<dir>`
+- `nylo clean` platform-specific deep cleaning with `--ios`, `--android`, and `--all` flags
+- iOS deep clean: removes Pods, .symlinks, Podfile.lock and re-runs `pod install --repo-update`
+- Android deep clean: runs `gradlew clean`
+- Platform directory validation before attempting platform-specific cleans
+- Comprehensive tests for `CleanCommand` and `TestCommand`
+
+### Changed
+- `CleanCommand.run()` now accepts optional arguments for flag parsing
+- CLI argument parser uses `allowTrailingOptions: false` for correct subcommand argument routing
+- Updated help text with all new command flags and usage examples
+
 ## [1.4.0] - 2026-02-14
 
 ### Added
