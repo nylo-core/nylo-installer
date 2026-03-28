@@ -68,23 +68,15 @@ class TestCommand {
       exit(1);
     }
 
-    // Calculate steps
-    int totalSteps = shouldFormat ? 2 : 1;
-    int currentStep = 0;
-    String stepLabel() {
-      currentStep++;
-      return '[$currentStep/$totalSteps]';
-    }
-
     NyloConsole.writeBanner();
     NyloConsole.write('');
     NyloConsole.writeInfo('Running tests...');
     NyloConsole.write('');
 
-    // Step 1: Format test files
+    // Format test files
     if (shouldFormat) {
       final formatSpinner = Spinner('');
-      formatSpinner.start('${stepLabel()} Formatting test files...');
+      formatSpinner.start('Formatting test files...');
       final formatResult = await Process.run('dart', ['format', testPath]);
       if (formatResult.exitCode != 0) {
         formatSpinner.stop('Formatting completed with warnings');
@@ -94,13 +86,13 @@ class TestCommand {
       }
     }
 
-    // Step 2: Run tests
+    // Run tests
     final args = <String>['test', '--reporter', 'json'];
     if (filter != null) args.addAll(['--name', filter]);
     if (coverage) args.add('--coverage');
     args.add(testPath);
 
-    NyloConsole.writeStep('${stepLabel()} Running tests...');
+    NyloConsole.writeStep('Running tests...');
     NyloConsole.write('');
 
     final process = await Process.start(

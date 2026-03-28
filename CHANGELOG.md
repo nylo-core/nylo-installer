@@ -1,3 +1,8 @@
+## [1.5.3] - 2026-03-28
+
+### Changed
+- Test command: removed step counter labels ([1/2], [2/2]) from output for cleaner UI
+
 ## [1.5.2] - 2026-03-28
 
 ### Changed
