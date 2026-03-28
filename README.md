@@ -25,6 +25,7 @@ Commands:
     --filter=<pattern>  Filter tests by name
     --coverage          Collect code coverage
     --path=<dir>        Test directory path (default: test)
+  self-update           Update nylo to the latest version
 
 Options:
   -h, --help            Show usage information
@@ -94,6 +95,14 @@ nylo test --filter "login"         # Filter tests by name
 nylo test --coverage               # Collect code coverage
 nylo test --path integration_test  # Specify test directory
 nylo test --filter "auth" --coverage
+```
+
+### `nylo self-update`
+
+Update nylo to the latest version from pub.dev:
+
+```bash
+nylo self-update
 ```
 
 ## Metro CLI

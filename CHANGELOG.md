@@ -1,3 +1,8 @@
+## [1.5.2] - 2026-03-28
+
+### Changed
+- README: added `self-update` command to the usage summary and as its own command section
+
 ## [1.5.1] - 2026-03-28
 
 ### Fixed
