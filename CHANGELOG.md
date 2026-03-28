@@ -1,3 +1,8 @@
+## [1.5.1] - 2026-03-28
+
+### Fixed
+- Self-update command: use plain `write()` instead of `writeSuccess()` for the "already on latest version" message to remove misleading `[SUCCESS]` prefix
+
 ## [1.5.0] - 2026-03-28
 
 ### Added

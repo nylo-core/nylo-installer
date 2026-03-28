@@ -22,7 +22,7 @@ class SelfUpdateCommand {
     }
 
     if (latestVersion == Constants.version) {
-      NyloConsole.writeSuccess(
+      NyloConsole.write(
           'You\'re already on the latest version (${Constants.version})');
       return;
     }
