@@ -1,3 +1,11 @@
+## [1.6.1] - 2026-03-29
+
+### Changed
+- Test command: redesigned output to group results by test suite with bold suite headers (e.g. `Test\AuthTest`)
+- Test command: results now stream in real-time as each test completes, rather than buffering all output
+- Test command: updated summary format to show `Tests: X passed` and `Duration: Xs`
+- Test command: added suite display name derivation from file paths using PascalCase
+
 ## [1.6.0] - 2026-03-28
 
 ### Added

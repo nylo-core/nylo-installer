@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:args/args.dart';
 import 'package:path/path.dart' as path;
+import 'package:recase/recase.dart';
 import '../console/console.dart';
 
 /// Tracks a test that has started but not yet finished
@@ -92,9 +93,6 @@ class TestCommand {
     if (coverage) args.add('--coverage');
     args.add(testPath);
 
-    NyloConsole.writeStep('Running tests...');
-    NyloConsole.write('');
-
     final process = await Process.start(
       'flutter',
       args,
@@ -105,6 +103,7 @@ class TestCommand {
     final tests = <int, _TestInfo>{};
     final testErrors = <int, String>{};
     final allResults = <_IndividualTestResult>[];
+    final printedSuites = <String>{};
     final rawOutput = StringBuffer();
     final stderrBuffer = StringBuffer();
 
@@ -117,7 +116,7 @@ class TestCommand {
         final result = _processJsonLine(line, suites, tests, testErrors);
         if (result != null) {
           allResults.add(result);
-          _printTestResult(result);
+          _printTestResult(result, printedSuites);
         }
       }),
       process.stderr.transform(utf8.decoder).forEach((data) {
@@ -207,90 +206,84 @@ class TestCommand {
     return null;
   }
 
-  /// Print a formatted test result line
-  void _printTestResult(_IndividualTestResult result) {
+  /// Convert a suite file path to a display name
+  /// e.g. `test/auth_test.dart` → `Test\Auth`
+  String _suiteDisplayName(String suitePath) {
+    var relative = path.relative(suitePath);
+    if (relative.endsWith('.dart')) {
+      relative = relative.substring(0, relative.length - 5);
+    }
+    if (relative.endsWith('_test')) {
+      relative = relative.substring(0, relative.length - 5);
+    }
+    final segments = path.split(relative);
+    return segments.map((s) => ReCase(s).pascalCase).join('\\');
+  }
+
+  /// Print a single test result, printing suite header on first encounter
+  void _printTestResult(
+      _IndividualTestResult result, Set<String> printedSuites) {
+    // Print suite header if this is the first test from this suite
+    if (printedSuites.add(result.suitePath)) {
+      final displayName = _suiteDisplayName(result.suitePath);
+      stdout.writeln('\n \x1B[1m$displayName\x1B[0m');
+    }
+
     final termWidth = _getTerminalWidth();
-    final durationStr = _formatTestDuration(result.duration);
-    final suitePath = path.relative(result.suitePath);
-    final testName = result.testName;
-
-    // Build visible label (no ANSI) for width calculations
-    final visibleLabel = '$suitePath > $testName';
-    final prefixLen = 4; // "  ✓ " or "  ✗ "
-    final availableWidth = termWidth - prefixLen - durationStr.length - 1;
-
-    // Truncate if too long
-    String displayVisible;
-    if (availableWidth > 3 && visibleLabel.length > availableWidth) {
-      displayVisible = '${visibleLabel.substring(0, availableWidth - 1)}\u2026';
-    } else {
-      displayVisible = visibleLabel;
-    }
-
-    // Pad for right-aligned duration
-    final padLen =
-        termWidth - prefixLen - displayVisible.length - durationStr.length;
-    final pad = padLen > 0 ? ' ' * padLen : ' ';
-
-    // Add ANSI color to the ">" separator
-    String ansiLabel;
-    if (displayVisible.length > suitePath.length + 3) {
-      final testPart = displayVisible.substring(suitePath.length + 3);
-      ansiLabel = '$suitePath \x1B[90m>\x1B[0m $testPart';
-    } else {
-      ansiLabel = displayVisible;
-    }
-
     final icon =
         result.passed ? '\x1B[92m\u2713\x1B[0m' : '\x1B[91m\u2717\x1B[0m';
+    final durationStr = _formatTestDuration(result.duration);
+    final testName = result.testName;
+
+    final prefixLen = 4; // "  ✓ " or "  ✗ "
+    final availableWidth = termWidth - prefixLen - durationStr.length - 2;
+
+    String displayTest;
+    if (availableWidth > 3 && testName.length > availableWidth) {
+      displayTest = '${testName.substring(0, availableWidth - 1)}\u2026';
+    } else {
+      displayTest = testName;
+    }
+
+    final padLen =
+        termWidth - prefixLen - displayTest.length - durationStr.length;
+    final pad = padLen > 0 ? ' ' * padLen : ' ';
     final coloredDuration = _colorDuration(result.duration, durationStr);
 
-    stdout.writeln('  $icon $ansiLabel$pad$coloredDuration');
+    stdout.writeln('  $icon $displayTest$pad$coloredDuration');
+
+    // Print error details for failed tests
+    if (!result.passed &&
+        result.errorMessage != null &&
+        result.errorMessage!.trim().isNotEmpty) {
+      final cleanError = _stripAnsiCodes(result.errorMessage!);
+      for (final errorLine in cleanError.split('\n')) {
+        if (errorLine.trim().isNotEmpty) {
+          stdout.writeln('\x1B[91m      $errorLine\x1B[0m');
+        }
+      }
+    }
   }
 
   /// Print aggregated test summary
   void _printSummary(List<_IndividualTestResult> results) {
     final passed = results.where((r) => r.passed).length;
     final failed = results.where((r) => !r.passed).length;
-    final total = results.length;
 
-    NyloConsole.write('');
-    NyloConsole.write('  ${'─' * 50}');
-    NyloConsole.write('');
-
-    // Print failure details
-    if (failed > 0) {
-      NyloConsole.writeError('Failed tests:');
-      NyloConsole.write('');
-      for (final r in results.where((r) => !r.passed)) {
-        final suitePath = path.relative(r.suitePath);
-        NyloConsole.writeError('  $suitePath > ${r.testName}');
-        if (r.errorMessage != null && r.errorMessage!.trim().isNotEmpty) {
-          final cleanError = _stripAnsiCodes(r.errorMessage!);
-          for (final errorLine in cleanError.split('\n')) {
-            if (errorLine.trim().isNotEmpty) {
-              NyloConsole.write('    $errorLine');
-            }
-          }
-        }
-        NyloConsole.write('');
-      }
-    }
-
-    final summary = 'Tests: $passed passed, $failed failed, $total total';
     final totalTime = results.fold<Duration>(
       Duration.zero,
       (sum, r) => sum + r.duration,
     );
-    final time = 'Time:  ${_formatDuration(totalTime)}';
+    final durationStr = _formatTestDuration(totalTime);
 
+    NyloConsole.write('');
     if (failed > 0) {
-      stdout.writeln('\x1B[91m  \u2717 $summary\x1B[0m');
-      stdout.writeln('\x1B[91m    $time\x1B[0m');
+      stdout.writeln(
+          '  \x1B[1mTests:\x1B[0m    \x1B[92m$passed passed\x1B[0m, \x1B[91m$failed failed\x1B[0m');
     } else {
-      NyloConsole.writeStepComplete(summary);
-      NyloConsole.write('    $time');
+      stdout.writeln('  \x1B[1mTests:\x1B[0m    \x1B[92m$passed passed\x1B[0m');
     }
+    stdout.writeln('  \x1B[1mDuration:\x1B[0m $durationStr');
   }
 
   /// Color a duration string based on speed
@@ -305,18 +298,6 @@ class TestCommand {
   String _formatTestDuration(Duration duration) {
     final seconds = duration.inMilliseconds / 1000;
     return '${seconds.toStringAsFixed(2)}s';
-  }
-
-  /// Format duration for summary display
-  String _formatDuration(Duration duration) {
-    if (duration.inMinutes > 0) {
-      return '${duration.inMinutes}m ${duration.inSeconds.remainder(60)}s';
-    }
-    if (duration.inSeconds > 0) {
-      final ms = duration.inMilliseconds.remainder(1000);
-      return '${duration.inSeconds}.${(ms ~/ 100)}s';
-    }
-    return '${duration.inMilliseconds}ms';
   }
 
   /// Strip ANSI escape codes and their literal representations from text
