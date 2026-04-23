@@ -1,3 +1,9 @@
+## [1.6.2] - 2026-04-23
+
+### Changed
+- Bumped dependency version constraints: `args` to `^2.7.0`, `path` to `^1.9.1`, and `test` to `^1.31.0`
+- Refreshed `pubspec.lock` with updated transitive dependencies (analyzer, matcher, meta, source_span, vm_service, etc.)
+
 ## [1.6.1] - 2026-03-29
 
 ### Changed
