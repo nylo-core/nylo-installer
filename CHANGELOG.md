@@ -1,3 +1,8 @@
+## [1.6.3] - 2026-04-29
+
+### Fixed
+- Metro command output: build hook progress and success messages now render on separate lines. `ProcessRunner.run` with `inheritStdio: true` now uses `ProcessStartMode.inheritStdio` so the child process is connected directly to the terminal and detects a TTY (also enables interactive metro prompts via inherited stdin)
+
 ## [1.6.2] - 2026-04-23
 
 ### Changed

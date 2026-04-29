@@ -24,6 +24,18 @@ class ProcessRunner {
     bool inheritStdio = false,
   }) async {
     try {
+      if (inheritStdio) {
+        final process = await Process.start(
+          executable,
+          arguments,
+          workingDirectory: workingDirectory,
+          runInShell: Platform.isWindows,
+          mode: ProcessStartMode.inheritStdio,
+        );
+        final exitCode = await process.exitCode;
+        return ProcessResult(exitCode: exitCode, stdout: '', stderr: '');
+      }
+
       final process = await Process.start(
         executable,
         arguments,
@@ -35,18 +47,8 @@ class ProcessRunner {
       final stderrBuffer = StringBuffer();
 
       await Future.wait([
-        process.stdout.transform(utf8.decoder).forEach((data) {
-          stdoutBuffer.write(data);
-          if (inheritStdio) {
-            stdout.write(data);
-          }
-        }),
-        process.stderr.transform(utf8.decoder).forEach((data) {
-          stderrBuffer.write(data);
-          if (inheritStdio) {
-            stderr.write(data);
-          }
-        }),
+        process.stdout.transform(utf8.decoder).forEach(stdoutBuffer.write),
+        process.stderr.transform(utf8.decoder).forEach(stderrBuffer.write),
       ]);
 
       final exitCode = await process.exitCode;
