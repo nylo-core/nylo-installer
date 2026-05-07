@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:args/args.dart';
 import 'package:nylo_installer/src/commands/clean_command.dart';
 import 'package:nylo_installer/src/commands/init_command.dart';
+import 'package:nylo_installer/src/commands/ios_pod_refresh_command.dart';
 import 'package:nylo_installer/src/commands/metro_command.dart';
 import 'package:nylo_installer/src/commands/new_command.dart';
 import 'package:nylo_installer/src/commands/self_update_command.dart';
@@ -66,6 +67,11 @@ void main(List<String> arguments) async {
             results.rest.length > 1 ? results.rest.sublist(1) : <String>[];
         await MetroCommand().run(metroArgs);
         break;
+      case 'ios:pod-refresh':
+        final iosPodArgs =
+            results.rest.length > 1 ? results.rest.sublist(1) : <String>[];
+        await IosPodRefreshCommand().run(iosPodArgs);
+        break;
       case 'self-update':
         await SelfUpdateCommand().run();
         break;
@@ -104,6 +110,7 @@ void _printUsage() {
       --android           Deep clean Android (run gradlew clean)
       --all               Deep clean both iOS and Android
     metro <command>       Run a metro command (e.g. make:model)
+    ios:pod-refresh       Remove iOS pods and run pod install --repo-update
     test                  Format and run Flutter tests
       --no-format         Skip formatting before running tests
       --filter=<pattern>  Filter tests by name
@@ -125,6 +132,7 @@ void _printUsage() {
     nylo test
     nylo test --filter "login" --coverage
     nylo metro make:model User
+    nylo ios:pod-refresh
     nylo self-update
 
   Documentation: ${Constants.docsUrl}

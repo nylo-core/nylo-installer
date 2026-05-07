@@ -1,3 +1,9 @@
+## [1.7.0] - 2026-05-07
+
+### Added
+- `nylo ios:pod-refresh` command: removes iOS build artifacts (`ios/Pods`, `ios/.symlinks`, `ios/Podfile.lock`) and runs `pod install --repo-update` to refresh CocoaPods dependencies. macOS-only; errors when `ios/` is missing or when run on a non-macOS platform
+- Comprehensive tests for `IosPodRefreshCommand` covering artifact removal, directory validation, and CLI help output
+
 ## [1.6.3] - 2026-04-29
 
 ### Fixed

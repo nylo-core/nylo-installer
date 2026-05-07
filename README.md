@@ -21,6 +21,7 @@ Commands:
     --android           Deep clean Android (run gradlew clean)
     --all               Deep clean both iOS and Android
   metro <command>       Run a metro command (e.g. make:model)
+  ios:pod-refresh       Remove iOS pods and run pod install --repo-update
   test                  Format and run Flutter tests
     --no-format         Skip formatting before running tests
     --filter=<pattern>  Filter tests by name
@@ -109,6 +110,20 @@ nylo metro make:controller HomeController
 ```
 
 This runs `dart run nylo_framework:main <command>` behind the scenes.
+
+### `nylo ios:pod-refresh`
+
+Refresh CocoaPods dependencies for an iOS project:
+
+```bash
+nylo ios:pod-refresh
+```
+
+This runs:
+1. Removes `ios/Pods`, `ios/.symlinks`, and `ios/Podfile.lock`
+2. Runs `pod install --repo-update` in the `ios/` directory
+
+macOS-only. Useful when pods become stale or out of sync.
 
 ### `nylo self-update`
 
