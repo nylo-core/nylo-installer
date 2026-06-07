@@ -11,14 +11,17 @@ void main() {
 
       setUp(() {
         parser = ArgParser()
-          ..addFlag('format',
-              defaultsTo: true,
-              help:
-                  'Format test files before running (use --no-format to skip)')
-          ..addOption('filter',
-              abbr: 'f',
-              help: 'Filter tests by name pattern',
-              valueHelp: 'pattern')
+          ..addFlag(
+            'format',
+            defaultsTo: true,
+            help: 'Format test files before running (use --no-format to skip)',
+          )
+          ..addOption(
+            'filter',
+            abbr: 'f',
+            help: 'Filter tests by name pattern',
+            valueHelp: 'pattern',
+          )
           ..addFlag('coverage', negatable: false, help: 'Collect code coverage')
           ..addOption('path', help: 'Test directory path', defaultsTo: 'test');
       });
@@ -126,12 +129,15 @@ void main() {
       test('should find *_test.dart files', () async {
         final testDir = Directory(path.join(tempDir.path, 'test'));
         await testDir.create();
-        await File(path.join(testDir.path, 'widget_test.dart'))
-            .writeAsString('void main() {}');
-        await File(path.join(testDir.path, 'unit_test.dart'))
-            .writeAsString('void main() {}');
-        await File(path.join(testDir.path, 'helper.dart'))
-            .writeAsString('// helper');
+        await File(
+          path.join(testDir.path, 'widget_test.dart'),
+        ).writeAsString('void main() {}');
+        await File(
+          path.join(testDir.path, 'unit_test.dart'),
+        ).writeAsString('void main() {}');
+        await File(
+          path.join(testDir.path, 'helper.dart'),
+        ).writeAsString('// helper');
 
         final files = <String>[];
         await for (final entity in testDir.list(recursive: true)) {
@@ -149,18 +155,21 @@ void main() {
       test('should find nested test files', () async {
         final testDir = Directory(path.join(tempDir.path, 'test'));
         await testDir.create();
-        await File(path.join(testDir.path, 'root_test.dart'))
-            .writeAsString('void main() {}');
+        await File(
+          path.join(testDir.path, 'root_test.dart'),
+        ).writeAsString('void main() {}');
 
         final nestedDir = Directory(path.join(testDir.path, 'unit'));
         await nestedDir.create();
-        await File(path.join(nestedDir.path, 'model_test.dart'))
-            .writeAsString('void main() {}');
+        await File(
+          path.join(nestedDir.path, 'model_test.dart'),
+        ).writeAsString('void main() {}');
 
         final deepDir = Directory(path.join(nestedDir.path, 'models'));
         await deepDir.create();
-        await File(path.join(deepDir.path, 'user_test.dart'))
-            .writeAsString('void main() {}');
+        await File(
+          path.join(deepDir.path, 'user_test.dart'),
+        ).writeAsString('void main() {}');
 
         final files = <String>[];
         await for (final entity in testDir.list(recursive: true)) {
@@ -197,14 +206,18 @@ void main() {
       test('should ignore non-test dart files', () async {
         final testDir = Directory(path.join(tempDir.path, 'test'));
         await testDir.create();
-        await File(path.join(testDir.path, 'helper.dart'))
-            .writeAsString('// helper');
-        await File(path.join(testDir.path, 'fixtures.dart'))
-            .writeAsString('// fixtures');
-        await File(path.join(testDir.path, 'test_utils.dart'))
-            .writeAsString('// utils');
-        await File(path.join(testDir.path, 'actual_test.dart'))
-            .writeAsString('void main() {}');
+        await File(
+          path.join(testDir.path, 'helper.dart'),
+        ).writeAsString('// helper');
+        await File(
+          path.join(testDir.path, 'fixtures.dart'),
+        ).writeAsString('// fixtures');
+        await File(
+          path.join(testDir.path, 'test_utils.dart'),
+        ).writeAsString('// utils');
+        await File(
+          path.join(testDir.path, 'actual_test.dart'),
+        ).writeAsString('void main() {}');
 
         final files = <String>[];
         await for (final entity in testDir.list(recursive: true)) {
@@ -221,10 +234,11 @@ void main() {
 
   group('CLI test command', () {
     test('help should list test command', () async {
-      final result = await Process.run(
-        'dart',
-        ['run', 'bin/nylo.dart', '--help'],
-      );
+      final result = await Process.run('dart', [
+        'run',
+        'bin/nylo.dart',
+        '--help',
+      ]);
 
       expect(result.exitCode, equals(0));
       expect(result.stdout, contains('test'));
@@ -232,10 +246,11 @@ void main() {
     });
 
     test('help should show test flags', () async {
-      final result = await Process.run(
-        'dart',
-        ['run', 'bin/nylo.dart', '--help'],
-      );
+      final result = await Process.run('dart', [
+        'run',
+        'bin/nylo.dart',
+        '--help',
+      ]);
 
       expect(result.stdout, contains('--no-format'));
       expect(result.stdout, contains('--filter'));
@@ -243,10 +258,11 @@ void main() {
     });
 
     test('help should show test examples', () async {
-      final result = await Process.run(
-        'dart',
-        ['run', 'bin/nylo.dart', '--help'],
-      );
+      final result = await Process.run('dart', [
+        'run',
+        'bin/nylo.dart',
+        '--help',
+      ]);
 
       expect(result.stdout, contains('nylo test'));
       expect(result.stdout, contains('nylo test --filter'));

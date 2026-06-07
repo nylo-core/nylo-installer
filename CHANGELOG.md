@@ -1,3 +1,17 @@
+## [1.8.0] - 2026-06-08
+
+### Added
+- `nylo locale:find-untranslated` command: scans Dart source via the analyzer AST for hardcoded, user-facing strings that are not wrapped in Nylo's `.tr()` / `trans()` translation calls. Only strings inside text widgets (`Text`, `SelectableText`, `RichText`, `TextSpan`) are reported, so keys, route paths, and data values are ignored. Supports `--format=<md|json>`, `--stdout`, `--ci` (exit 1 on findings), `--output/-o`, and `--path`, plus `// i18n-ignore` line suppression and an optional `nylo_i18n.yaml` config to override scan globs and text widgets/functions
+- `nylo locale:check-missing-keys` command: compares every `lang/*.json` locale file against a baseline locale (default `en.json`) and reports missing, empty, and extra keys per locale, flattening nested JSON to dot-notation to match Nylo's key resolution. Supports `--file`, `--format=<md|txt|json>`, `--stdout`, `--ci` (exit 1 on missing/empty keys), `--strict` (also fail on extra keys), `--output/-o`, and `--path`; invalid JSON or a missing baseline produces a clean error and exit code 1
+- Per-command help: `nylo <command> -h` / `--help` now prints a usage block (description, usage line, and option list) for `new`, `clean`, `test`, `ios:pod-refresh`, `self-update`, and both `locale:*` commands. The main usage output gained the locale commands, per-command examples, and a `Run 'nylo <command> -h' for command-specific help.` hint
+- Exported the locale audit commands and supporting library (`models`, `config`, `file_collector`, `locale_compare`, `scanner`, `reporter`) from `nylo_installer.dart` for programmatic use
+
+### Changed
+- Update-available banner is now suppressed when stdout is not an interactive terminal (CI or piped/redirected output), preventing it from polluting machine-readable output such as the `locale:*` JSON reports
+- `self-update` now parses arguments and supports `-h` / `--help`
+- Raised the minimum Dart SDK to `>=3.9.0` and added the `analyzer: ^12.0.0` and `glob: ^2.1.0` dependencies, used by the locale scanner and file collector
+- Reformatted the codebase with the Dart 3.9 formatter (trailing-comma style)
+
 ## [1.7.0] - 2026-05-07
 
 ### Added

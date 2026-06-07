@@ -77,7 +77,8 @@ class ShellDetector {
       }
 
       // Append alias with a comment
-      final aliasBlock = '''
+      final aliasBlock =
+          '''
 
 # Nylo Metro CLI alias (added by nylo installer)
 ${config.aliasFormat}

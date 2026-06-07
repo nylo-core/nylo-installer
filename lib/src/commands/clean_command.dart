@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:args/args.dart';
 import '../console/console.dart';
+import '../utils/command_usage.dart';
 import '../utils/process_runner.dart';
 
 /// Handles the "nylo clean" command
@@ -10,16 +11,40 @@ class CleanCommand {
   /// Execute the clean command
   Future<void> run([List<String> arguments = const []]) async {
     final parser = ArgParser()
+      ..addFlag(
+        'help',
+        abbr: 'h',
+        negatable: false,
+        help: 'Show usage information',
+      )
       ..addFlag('ios', negatable: false, help: 'Deep clean iOS')
       ..addFlag('android', negatable: false, help: 'Deep clean Android')
       ..addFlag('all', negatable: false, help: 'Deep clean iOS and Android');
+
+    const description =
+        'Run flutter clean and flutter pub get, with optional platform '
+        'deep-cleaning.';
 
     final ArgResults results;
     try {
       results = parser.parse(arguments);
     } on FormatException catch (e) {
       NyloConsole.writeError(e.message);
+      printCommandUsage(
+        command: 'clean',
+        description: description,
+        parser: parser,
+      );
       exit(1);
+    }
+
+    if (results['help'] as bool) {
+      printCommandUsage(
+        command: 'clean',
+        description: description,
+        parser: parser,
+      );
+      exit(0);
     }
 
     bool cleanIos = results['ios'] as bool || results['all'] as bool;
@@ -32,7 +57,8 @@ class CleanCommand {
     }
     if (cleanAndroid && !await Directory('android').exists()) {
       NyloConsole.writeWarning(
-          'android/ directory not found. Skipping Android clean.');
+        'android/ directory not found. Skipping Android clean.',
+      );
       cleanAndroid = false;
     }
 
@@ -77,13 +103,13 @@ class CleanCommand {
       if (!Platform.isMacOS) {
         podSpinner.stop('pod install skipped (not macOS)');
         NyloConsole.writeWarning(
-            'pod install is only available on macOS. Skipping.');
-      } else {
-        final podResult = await ProcessRunner.run(
-          'pod',
-          ['install', '--repo-update'],
-          workingDirectory: 'ios',
+          'pod install is only available on macOS. Skipping.',
         );
+      } else {
+        final podResult = await ProcessRunner.run('pod', [
+          'install',
+          '--repo-update',
+        ], workingDirectory: 'ios');
         podSpinner.stop('pod install complete');
 
         if (podResult.exitCode != 0) {
@@ -98,11 +124,9 @@ class CleanCommand {
       final gradleSpinner = Spinner('');
       gradleSpinner.start('${stepLabel()} Running gradlew clean...');
       final gradlew = Platform.isWindows ? 'gradlew.bat' : './gradlew';
-      final gradleResult = await ProcessRunner.run(
-        gradlew,
-        ['clean'],
-        workingDirectory: 'android',
-      );
+      final gradleResult = await ProcessRunner.run(gradlew, [
+        'clean',
+      ], workingDirectory: 'android');
       gradleSpinner.stop('gradlew clean complete');
 
       if (gradleResult.exitCode != 0) {
@@ -127,13 +151,8 @@ class CleanCommand {
 
   /// Remove iOS build artifacts (Pods, .symlinks, Podfile.lock)
   Future<void> _removeIosArtifacts() async {
-    final directories = [
-      Directory('ios/Pods'),
-      Directory('ios/.symlinks'),
-    ];
-    final files = [
-      File('ios/Podfile.lock'),
-    ];
+    final directories = [Directory('ios/Pods'), Directory('ios/.symlinks')];
+    final files = [File('ios/Podfile.lock')];
 
     for (final dir in directories) {
       if (await dir.exists()) {

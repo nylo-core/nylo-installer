@@ -18,11 +18,7 @@ void main() {
     });
 
     test('should handle empty output', () {
-      final result = ProcessResult(
-        exitCode: 1,
-        stdout: '',
-        stderr: '',
-      );
+      final result = ProcessResult(exitCode: 1, stdout: '', stderr: '');
 
       expect(result.exitCode, equals(1));
       expect(result.stdout, isEmpty);

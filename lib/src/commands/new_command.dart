@@ -1,7 +1,9 @@
 import 'dart:io';
+import 'package:args/args.dart';
 import 'package:recase/recase.dart';
 import 'package:path/path.dart' as path;
 import '../console/console.dart';
+import '../utils/command_usage.dart';
 import '../utils/validators.dart';
 import '../utils/process_runner.dart';
 import '../constants.dart';
@@ -10,14 +12,48 @@ import '../constants.dart';
 class NewCommand {
   /// Execute the new project creation
   Future<void> run(List<String> arguments) async {
+    final parser = ArgParser()
+      ..addFlag(
+        'help',
+        abbr: 'h',
+        negatable: false,
+        help: 'Show usage information',
+      );
+
+    const description = 'Create a new Nylo project from the starter template.';
+
+    final ArgResults results;
+    try {
+      results = parser.parse(arguments);
+    } on FormatException catch (e) {
+      NyloConsole.writeError(e.message);
+      printCommandUsage(
+        command: 'new',
+        description: description,
+        parser: parser,
+        invocation: '<project_name>',
+      );
+      exit(1);
+    }
+
+    if (results['help'] as bool) {
+      printCommandUsage(
+        command: 'new',
+        description: description,
+        parser: parser,
+        invocation: '<project_name>',
+      );
+      exit(0);
+    }
+
     // Step 1: Validate arguments
-    if (arguments.isEmpty) {
+    if (results.rest.isEmpty) {
       NyloConsole.writeError('Please provide a project name');
       NyloConsole.write('Usage: nylo new <project_name>');
       exit(1);
     }
 
-    final projectName = arguments.first;
+    final projectName = results.rest.first;
     final projectNameSnake = ReCase(projectName).snakeCase;
     final projectPath = path.join(Directory.current.path, projectNameSnake);
 
@@ -105,10 +141,13 @@ class NewCommand {
 
   /// Clones the Nylo template repository
   Future<void> _cloneTemplate(String targetPath) async {
-    final result = await ProcessRunner.run(
-      'git',
-      ['clone', '--depth', '1', Constants.templateRepoUrl, targetPath],
-    );
+    final result = await ProcessRunner.run('git', [
+      'clone',
+      '--depth',
+      '1',
+      Constants.templateRepoUrl,
+      targetPath,
+    ]);
 
     if (result.exitCode != 0) {
       NyloConsole.writeError('Failed to clone template repository');
@@ -127,7 +166,9 @@ class NewCommand {
 
   /// Updates the project name in pubspec.yaml and other files
   Future<void> _updateProjectName(
-      String projectPath, String projectName) async {
+    String projectPath,
+    String projectName,
+  ) async {
     // Update pubspec.yaml
     final pubspecFile = File(path.join(projectPath, 'pubspec.yaml'));
     if (await pubspecFile.exists()) {
@@ -158,59 +199,113 @@ class NewCommand {
 
   /// Updates Android-specific configuration
   Future<void> _updateAndroidConfig(
-      String projectPath, String projectName) async {
-    final buildGradlePath =
-        path.join(projectPath, 'android', 'app', 'build.gradle');
+    String projectPath,
+    String projectName,
+  ) async {
+    final buildGradlePath = path.join(
+      projectPath,
+      'android',
+      'app',
+      'build.gradle',
+    );
     final buildGradleFile = File(buildGradlePath);
 
     if (await buildGradleFile.exists()) {
       String content = await buildGradleFile.readAsString();
-      content =
-          content.replaceAll('com.nylo.android', 'com.$projectName.android');
+      content = content.replaceAll(
+        'com.nylo.android',
+        'com.$projectName.android',
+      );
       await buildGradleFile.writeAsString(content);
     }
 
     // Also update build.gradle.kts if it exists
-    final buildGradleKtsPath =
-        path.join(projectPath, 'android', 'app', 'build.gradle.kts');
+    final buildGradleKtsPath = path.join(
+      projectPath,
+      'android',
+      'app',
+      'build.gradle.kts',
+    );
     final buildGradleKtsFile = File(buildGradleKtsPath);
 
     if (await buildGradleKtsFile.exists()) {
       String content = await buildGradleKtsFile.readAsString();
-      content =
-          content.replaceAll('com.nylo.android', 'com.$projectName.android');
+      content = content.replaceAll(
+        'com.nylo.android',
+        'com.$projectName.android',
+      );
       await buildGradleKtsFile.writeAsString(content);
     }
 
     // Rename Kotlin source directory from com/nylo/ to com/<projectName>/
-    final kotlinNyloDir = Directory(path.join(
-        projectPath, 'android', 'app', 'src', 'main', 'kotlin', 'com', 'nylo'));
+    final kotlinNyloDir = Directory(
+      path.join(
+        projectPath,
+        'android',
+        'app',
+        'src',
+        'main',
+        'kotlin',
+        'com',
+        'nylo',
+      ),
+    );
     if (await kotlinNyloDir.exists()) {
-      final kotlinNewDir = Directory(path.join(projectPath, 'android', 'app',
-          'src', 'main', 'kotlin', 'com', projectName));
+      final kotlinNewDir = Directory(
+        path.join(
+          projectPath,
+          'android',
+          'app',
+          'src',
+          'main',
+          'kotlin',
+          'com',
+          projectName,
+        ),
+      );
       await kotlinNyloDir.rename(kotlinNewDir.path);
     }
 
     // Update package declaration in MainActivity.kt
-    final mainActivityPath = path.join(projectPath, 'android', 'app', 'src',
-        'main', 'kotlin', 'com', projectName, 'android', 'MainActivity.kt');
+    final mainActivityPath = path.join(
+      projectPath,
+      'android',
+      'app',
+      'src',
+      'main',
+      'kotlin',
+      'com',
+      projectName,
+      'android',
+      'MainActivity.kt',
+    );
     final mainActivityFile = File(mainActivityPath);
     if (await mainActivityFile.exists()) {
       String content = await mainActivityFile.readAsString();
       content = content.replaceAll(
-          'package com.nylo.android', 'package com.$projectName.android');
+        'package com.nylo.android',
+        'package com.$projectName.android',
+      );
       await mainActivityFile.writeAsString(content);
     }
 
     // Update android:label in AndroidManifest.xml
     final manifestPath = path.join(
-        projectPath, 'android', 'app', 'src', 'main', 'AndroidManifest.xml');
+      projectPath,
+      'android',
+      'app',
+      'src',
+      'main',
+      'AndroidManifest.xml',
+    );
     final manifestFile = File(manifestPath);
     if (await manifestFile.exists()) {
       String content = await manifestFile.readAsString();
       final titleCase = ReCase(projectName).titleCase;
       content = content.replaceAll(
-          'android:label="Nylo"', 'android:label="$titleCase"');
+        'android:label="Nylo"',
+        'android:label="$titleCase"',
+      );
       await manifestFile.writeAsString(content);
     }
   }
@@ -229,7 +324,9 @@ class NewCommand {
       String content = await pbxprojFile.readAsString();
       content = content.replaceAll('com.nylo.ios', 'com.$projectName.ios');
       content = content.replaceAll(
-          'com.nylo.dev.RunnerTests', 'com.$projectName.ios.RunnerTests');
+        'com.nylo.dev.RunnerTests',
+        'com.$projectName.ios.RunnerTests',
+      );
       await pbxprojFile.writeAsString(content);
     }
 
@@ -240,7 +337,9 @@ class NewCommand {
       String content = await infoPlistFile.readAsString();
       final titleCase = ReCase(projectName).titleCase;
       content = content.replaceAll(
-          '<string>Nylo</string>', '<string>$titleCase</string>');
+        '<string>Nylo</string>',
+        '<string>$titleCase</string>',
+      );
       await infoPlistFile.writeAsString(content);
     }
   }
@@ -261,7 +360,9 @@ class NewCommand {
 
   /// Updates test file imports from `import '/` to `import 'package:<name>/`
   Future<void> _updateTestImports(
-      String projectPath, String projectName) async {
+    String projectPath,
+    String projectName,
+  ) async {
     final testDir = Directory(path.join(projectPath, 'test'));
     if (!await testDir.exists()) return;
 
@@ -269,8 +370,10 @@ class NewCommand {
       if (entity is File && entity.path.endsWith('.dart')) {
         String content = await entity.readAsString();
         if (content.contains("import '/")) {
-          content =
-              content.replaceAll("import '/", "import 'package:$projectName/");
+          content = content.replaceAll(
+            "import '/",
+            "import 'package:$projectName/",
+          );
           await entity.writeAsString(content);
         }
       }
@@ -279,11 +382,10 @@ class NewCommand {
 
   /// Runs flutter pub get in the project directory
   Future<void> _runPubGet(String projectPath) async {
-    final result = await ProcessRunner.run(
-      'flutter',
-      ['pub', 'get'],
-      workingDirectory: projectPath,
-    );
+    final result = await ProcessRunner.run('flutter', [
+      'pub',
+      'get',
+    ], workingDirectory: projectPath);
 
     if (result.exitCode != 0) {
       NyloConsole.writeWarning('flutter pub get completed with warnings');
@@ -302,20 +404,20 @@ class NewCommand {
 
   /// Generates app key using nylo_framework
   Future<void> _generateAppKey(String projectPath) async {
-    final result = await ProcessRunner.run(
-      'dart',
-      ['run', 'nylo_framework:main', 'make:key'],
-      workingDirectory: projectPath,
-    );
+    final result = await ProcessRunner.run('dart', [
+      'run',
+      'nylo_framework:main',
+      'make:key',
+    ], workingDirectory: projectPath);
     if (result.exitCode != 0 && result.stderr.trim().isNotEmpty) {
       NyloConsole.writeWarning('App key generation completed with warnings');
     }
 
-    final resultMakeEnv = await ProcessRunner.run(
-      'dart',
-      ['run', 'nylo_framework:main', 'make:env'],
-      workingDirectory: projectPath,
-    );
+    final resultMakeEnv = await ProcessRunner.run('dart', [
+      'run',
+      'nylo_framework:main',
+      'make:env',
+    ], workingDirectory: projectPath);
     if (resultMakeEnv.exitCode != 0) {
       NyloConsole.writeWarning('App key generation completed with warnings');
     }

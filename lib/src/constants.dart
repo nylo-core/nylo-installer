@@ -8,7 +8,7 @@ class Constants {
   static const String templateRepoUrl = 'https://github.com/nylo-core/nylo';
 
   /// Installer version
-  static const String version = '1.7.0';
+  static const String version = '1.8.0';
 
   /// Documentation URL
   static const String docsUrl = 'https://nylo.dev/docs';
@@ -22,7 +22,8 @@ class Constants {
 
   /// Cache directory path (~/.nylo)
   static String get cacheDirPath {
-    final home = Platform.environment['HOME'] ??
+    final home =
+        Platform.environment['HOME'] ??
         Platform.environment['USERPROFILE'] ??
         '.';
     return '$home/.nylo';

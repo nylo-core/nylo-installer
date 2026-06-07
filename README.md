@@ -22,6 +22,10 @@ Commands:
     --all               Deep clean both iOS and Android
   metro <command>       Run a metro command (e.g. make:model)
   ios:pod-refresh       Remove iOS pods and run pod install --repo-update
+  locale:find-untranslated   Find hardcoded strings not wrapped in .tr()/trans()
+    --format=<md|json>  Report format; --stdout to print; --ci to fail on findings
+  locale:check-missing-keys  Compare lang/*.json against a baseline locale
+    --file=<name>       Baseline locale (default: en.json); --stdout; --ci; --strict
   test                  Format and run Flutter tests
     --no-format         Skip formatting before running tests
     --filter=<pattern>  Filter tests by name
@@ -125,6 +129,33 @@ This runs:
 
 macOS-only. Useful when pods become stale or out of sync.
 
+### `nylo locale:find-untranslated`
+
+Scan your `lib/resources/pages/` and `lib/resources/widgets/` for hardcoded, user-facing strings that are **not** wrapped in Nylo's `.tr()` / `trans()` translation calls. To stay focused on real UI copy, only strings inside text widgets (`Text`, `SelectableText`, `RichText`, `TextSpan`) are reported — keys, route paths, and data-model values are ignored. Parsing happens via the analyzer AST, so `"welcome".tr()` is never a false positive:
+
+```bash
+nylo locale:find-untranslated                      # writes nylo-i18n-baseline.md
+nylo locale:find-untranslated --stdout             # print the report instead
+nylo locale:find-untranslated --format json -o report.json
+nylo locale:find-untranslated --ci                 # exit 1 if any finding exists
+```
+
+Add a `// i18n-ignore` comment above a line to suppress it. Defaults (scan globs, the text widgets to inspect, etc.) can be overridden with an optional `nylo_i18n.yaml` at your project root — e.g. add your own text widgets via `text_widgets:` (or string-bearing helpers via `text_functions:`).
+
+### `nylo locale:check-missing-keys`
+
+Compare every `lang/*.json` locale file against a baseline locale (default `en.json`) and report missing, empty, and extra keys per locale. Nested JSON is flattened to dot-notation (`navigation.home`), matching Nylo's key resolution:
+
+```bash
+nylo locale:check-missing-keys                     # writes nylo-i18n-missing-keys.md
+nylo locale:check-missing-keys --stdout
+nylo locale:check-missing-keys --file en.json --format txt
+nylo locale:check-missing-keys --ci                # exit 1 on missing/empty keys
+nylo locale:check-missing-keys --ci --strict       # also exit 1 on extra keys
+```
+
+By default, extra keys alone do not fail `--ci`; add `--strict` to enforce identical key sets, so locales with keys absent from the baseline also fail. Invalid JSON or a missing baseline produces a clean error and exit code 1.
+
 ### `nylo self-update`
 
 Update nylo to the latest version from pub.dev:
@@ -145,7 +176,7 @@ metro make:model User
 
 ## Requirements
 
-- Dart SDK >= 3.0.0
+- Dart SDK >= 3.9.0
 - Flutter
 - Git
 

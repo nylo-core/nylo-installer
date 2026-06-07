@@ -60,10 +60,7 @@ void main() {
       });
 
       test('should reject unknown flags', () {
-        expect(
-          () => parser.parse(['--web']),
-          throwsA(isA<FormatException>()),
-        );
+        expect(() => parser.parse(['--web']), throwsA(isA<FormatException>()));
       });
     });
 
@@ -123,8 +120,9 @@ void main() {
       test('should remove Pods directory', () async {
         final podsDir = Directory(path.join(tempDir.path, 'ios', 'Pods'));
         await podsDir.create(recursive: true);
-        await File(path.join(podsDir.path, 'Manifest.lock'))
-            .writeAsString('mock');
+        await File(
+          path.join(podsDir.path, 'Manifest.lock'),
+        ).writeAsString('mock');
 
         expect(await podsDir.exists(), isTrue);
 
@@ -134,11 +132,13 @@ void main() {
       });
 
       test('should remove .symlinks directory', () async {
-        final symlinksDir =
-            Directory(path.join(tempDir.path, 'ios', '.symlinks'));
+        final symlinksDir = Directory(
+          path.join(tempDir.path, 'ios', '.symlinks'),
+        );
         await symlinksDir.create(recursive: true);
-        await File(path.join(symlinksDir.path, 'some_link'))
-            .writeAsString('mock');
+        await File(
+          path.join(symlinksDir.path, 'some_link'),
+        ).writeAsString('mock');
 
         expect(await symlinksDir.exists(), isTrue);
 
@@ -253,10 +253,11 @@ void main() {
 
   group('CLI clean flags', () {
     test('help should list clean flags', () async {
-      final result = await Process.run(
-        'dart',
-        ['run', 'bin/nylo.dart', '--help'],
-      );
+      final result = await Process.run('dart', [
+        'run',
+        'bin/nylo.dart',
+        '--help',
+      ]);
 
       expect(result.exitCode, equals(0));
       expect(result.stdout, contains('--ios'));
@@ -265,10 +266,11 @@ void main() {
     });
 
     test('help should show clean flag examples', () async {
-      final result = await Process.run(
-        'dart',
-        ['run', 'bin/nylo.dart', '--help'],
-      );
+      final result = await Process.run('dart', [
+        'run',
+        'bin/nylo.dart',
+        '--help',
+      ]);
 
       expect(result.stdout, contains('nylo clean --ios'));
       expect(result.stdout, contains('nylo clean --all'));

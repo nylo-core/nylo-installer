@@ -59,11 +59,7 @@ class ProcessRunner {
         stderr: stderrBuffer.toString(),
       );
     } catch (e) {
-      return ProcessResult(
-        exitCode: 1,
-        stdout: '',
-        stderr: e.toString(),
-      );
+      return ProcessResult(exitCode: 1, stdout: '', stderr: e.toString());
     }
   }
 }

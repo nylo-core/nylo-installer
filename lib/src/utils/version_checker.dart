@@ -101,10 +101,9 @@ class VersionChecker {
         dir.createSync(recursive: true);
       }
       final file = File('${Constants.cacheDirPath}/${Constants.cacheFileName}');
-      file.writeAsStringSync(jsonEncode({
-        'lastCheck': timestampMs,
-        'latestVersion': latestVersion,
-      }));
+      file.writeAsStringSync(
+        jsonEncode({'lastCheck': timestampMs, 'latestVersion': latestVersion}),
+      );
     } catch (_) {
       // Silently ignore write failures
     }
@@ -129,8 +128,9 @@ class VersionChecker {
     final message =
         'Update available: ${info.currentVersion} → ${info.latestVersion}';
     final action = 'Run `nylo self-update` to update';
-    final innerWidth =
-        message.length > action.length ? message.length + 4 : action.length + 4;
+    final innerWidth = message.length > action.length
+        ? message.length + 4
+        : action.length + 4;
 
     final topBorder = '╔${'═' * innerWidth}╗';
     final bottomBorder = '╚${'═' * innerWidth}╝';

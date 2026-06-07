@@ -9,8 +9,9 @@ void main() {
       late Directory tempDir;
 
       setUp(() async {
-        tempDir =
-            await Directory.systemTemp.createTemp('nylo_pod_refresh_test_');
+        tempDir = await Directory.systemTemp.createTemp(
+          'nylo_pod_refresh_test_',
+        );
       });
 
       tearDown(() async {
@@ -22,8 +23,9 @@ void main() {
       test('should remove Pods directory', () async {
         final podsDir = Directory(path.join(tempDir.path, 'ios', 'Pods'));
         await podsDir.create(recursive: true);
-        await File(path.join(podsDir.path, 'Manifest.lock'))
-            .writeAsString('mock');
+        await File(
+          path.join(podsDir.path, 'Manifest.lock'),
+        ).writeAsString('mock');
 
         expect(await podsDir.exists(), isTrue);
 
@@ -33,11 +35,13 @@ void main() {
       });
 
       test('should remove .symlinks directory', () async {
-        final symlinksDir =
-            Directory(path.join(tempDir.path, 'ios', '.symlinks'));
+        final symlinksDir = Directory(
+          path.join(tempDir.path, 'ios', '.symlinks'),
+        );
         await symlinksDir.create(recursive: true);
-        await File(path.join(symlinksDir.path, 'some_link'))
-            .writeAsString('mock');
+        await File(
+          path.join(symlinksDir.path, 'some_link'),
+        ).writeAsString('mock');
 
         expect(await symlinksDir.exists(), isTrue);
 
@@ -114,8 +118,9 @@ void main() {
       late Directory tempDir;
 
       setUp(() async {
-        tempDir =
-            await Directory.systemTemp.createTemp('nylo_pod_refresh_test_');
+        tempDir = await Directory.systemTemp.createTemp(
+          'nylo_pod_refresh_test_',
+        );
       });
 
       tearDown(() async {
@@ -139,38 +144,37 @@ void main() {
 
   group('CLI ios:pod-refresh', () {
     test('help should list ios:pod-refresh command', () async {
-      final result = await Process.run(
-        'dart',
-        ['run', 'bin/nylo.dart', '--help'],
-      );
+      final result = await Process.run('dart', [
+        'run',
+        'bin/nylo.dart',
+        '--help',
+      ]);
 
       expect(result.exitCode, equals(0));
       expect(result.stdout, contains('ios:pod-refresh'));
     });
 
     test('help should show ios:pod-refresh example', () async {
-      final result = await Process.run(
-        'dart',
-        ['run', 'bin/nylo.dart', '--help'],
-      );
+      final result = await Process.run('dart', [
+        'run',
+        'bin/nylo.dart',
+        '--help',
+      ]);
 
       expect(result.stdout, contains('nylo ios:pod-refresh'));
     });
 
     test('should error when ios/ directory is missing', () async {
-      final tempDir =
-          await Directory.systemTemp.createTemp('nylo_pod_refresh_cli_');
+      final tempDir = await Directory.systemTemp.createTemp(
+        'nylo_pod_refresh_cli_',
+      );
       final projectRoot = Directory.current.path;
       try {
-        final result = await Process.run(
-          'dart',
-          [
-            'run',
-            path.join(projectRoot, 'bin', 'nylo.dart'),
-            'ios:pod-refresh'
-          ],
-          workingDirectory: tempDir.path,
-        );
+        final result = await Process.run('dart', [
+          'run',
+          path.join(projectRoot, 'bin', 'nylo.dart'),
+          'ios:pod-refresh',
+        ], workingDirectory: tempDir.path);
 
         expect(result.exitCode, equals(1));
         expect(result.stderr, contains('ios/'));

@@ -57,10 +57,7 @@ void main() {
           currentVersion: '1.0.0',
           latestVersion: '2.0.0',
         );
-        expect(
-          () => VersionChecker.printUpdateBanner(info),
-          returnsNormally,
-        );
+        expect(() => VersionChecker.printUpdateBanner(info), returnsNormally);
       });
     });
 
@@ -76,15 +73,19 @@ void main() {
     });
 
     group('fetchLatestVersion', () {
-      test('should return a version string from pub.dev', () async {
-        final checker = VersionChecker();
-        final version = await checker.fetchLatestVersion();
+      test(
+        'should return a version string from pub.dev',
+        () async {
+          final checker = VersionChecker();
+          final version = await checker.fetchLatestVersion();
 
-        // This is a live network test - it may return null if offline
-        if (version != null) {
-          expect(version, matches(RegExp(r'^\d+\.\d+\.\d+')));
-        }
-      }, timeout: Timeout(Duration(seconds: 10)));
+          // This is a live network test - it may return null if offline
+          if (version != null) {
+            expect(version, matches(RegExp(r'^\d+\.\d+\.\d+')));
+          }
+        },
+        timeout: Timeout(Duration(seconds: 10)),
+      );
     });
 
     group('cache', () {
@@ -94,10 +95,12 @@ void main() {
         cacheDir.createSync(recursive: true);
 
         final cacheFile = File('${cacheDir.path}/version_cache.json');
-        cacheFile.writeAsStringSync(jsonEncode({
-          'lastCheck': DateTime.now().millisecondsSinceEpoch,
-          'latestVersion': '99.99.99',
-        }));
+        cacheFile.writeAsStringSync(
+          jsonEncode({
+            'lastCheck': DateTime.now().millisecondsSinceEpoch,
+            'latestVersion': '99.99.99',
+          }),
+        );
 
         expect(cacheFile.existsSync(), isTrue);
 

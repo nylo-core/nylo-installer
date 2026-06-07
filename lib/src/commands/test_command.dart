@@ -4,6 +4,7 @@ import 'package:args/args.dart';
 import 'package:path/path.dart' as path;
 import 'package:recase/recase.dart';
 import '../console/console.dart';
+import '../utils/command_usage.dart';
 
 /// Tracks a test that has started but not yet finished
 class _TestInfo {
@@ -41,20 +42,48 @@ class TestCommand {
   /// Execute the test command
   Future<void> run([List<String> arguments = const []]) async {
     final parser = ArgParser()
-      ..addFlag('format',
-          defaultsTo: true,
-          help: 'Format test files before running (use --no-format to skip)')
-      ..addOption('filter',
-          abbr: 'f', help: 'Filter tests by name pattern', valueHelp: 'pattern')
+      ..addFlag(
+        'help',
+        abbr: 'h',
+        negatable: false,
+        help: 'Show usage information',
+      )
+      ..addFlag(
+        'format',
+        defaultsTo: true,
+        help: 'Format test files before running (use --no-format to skip)',
+      )
+      ..addOption(
+        'filter',
+        abbr: 'f',
+        help: 'Filter tests by name pattern',
+        valueHelp: 'pattern',
+      )
       ..addFlag('coverage', negatable: false, help: 'Collect code coverage')
       ..addOption('path', help: 'Test directory path', defaultsTo: 'test');
+
+    const description = 'Format and run Flutter tests with pretty output.';
 
     final ArgResults results;
     try {
       results = parser.parse(arguments);
     } on FormatException catch (e) {
       NyloConsole.writeError(e.message);
+      printCommandUsage(
+        command: 'test',
+        description: description,
+        parser: parser,
+      );
       exit(1);
+    }
+
+    if (results['help'] as bool) {
+      printCommandUsage(
+        command: 'test',
+        description: description,
+        parser: parser,
+      );
+      exit(0);
     }
 
     final bool shouldFormat = results['format'] as bool;
@@ -65,7 +94,8 @@ class TestCommand {
     // Validate test directory exists
     if (!await Directory(testPath).exists()) {
       NyloConsole.writeError(
-          '$testPath/ directory not found. Are you in a Flutter project?');
+        '$testPath/ directory not found. Are you in a Flutter project?',
+      );
       exit(1);
     }
 
@@ -112,13 +142,13 @@ class TestCommand {
           .transform(utf8.decoder)
           .transform(const LineSplitter())
           .forEach((line) {
-        rawOutput.writeln(line);
-        final result = _processJsonLine(line, suites, tests, testErrors);
-        if (result != null) {
-          allResults.add(result);
-          _printTestResult(result, printedSuites);
-        }
-      }),
+            rawOutput.writeln(line);
+            final result = _processJsonLine(line, suites, tests, testErrors);
+            if (result != null) {
+              allResults.add(result);
+              _printTestResult(result, printedSuites);
+            }
+          }),
       process.stderr.transform(utf8.decoder).forEach((data) {
         stderrBuffer.write(data);
       }),
@@ -222,7 +252,9 @@ class TestCommand {
 
   /// Print a single test result, printing suite header on first encounter
   void _printTestResult(
-      _IndividualTestResult result, Set<String> printedSuites) {
+    _IndividualTestResult result,
+    Set<String> printedSuites,
+  ) {
     // Print suite header if this is the first test from this suite
     if (printedSuites.add(result.suitePath)) {
       final displayName = _suiteDisplayName(result.suitePath);
@@ -230,8 +262,9 @@ class TestCommand {
     }
 
     final termWidth = _getTerminalWidth();
-    final icon =
-        result.passed ? '\x1B[92m\u2713\x1B[0m' : '\x1B[91m\u2717\x1B[0m';
+    final icon = result.passed
+        ? '\x1B[92m\u2713\x1B[0m'
+        : '\x1B[91m\u2717\x1B[0m';
     final durationStr = _formatTestDuration(result.duration);
     final testName = result.testName;
 
@@ -279,7 +312,8 @@ class TestCommand {
     NyloConsole.write('');
     if (failed > 0) {
       stdout.writeln(
-          '  \x1B[1mTests:\x1B[0m    \x1B[92m$passed passed\x1B[0m, \x1B[91m$failed failed\x1B[0m');
+        '  \x1B[1mTests:\x1B[0m    \x1B[92m$passed passed\x1B[0m, \x1B[91m$failed failed\x1B[0m',
+      );
     } else {
       stdout.writeln('  \x1B[1mTests:\x1B[0m    \x1B[92m$passed passed\x1B[0m');
     }
