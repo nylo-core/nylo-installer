@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:io' hide ProcessResult;
 import 'package:args/args.dart';
 import 'package:recase/recase.dart';
 import 'package:path/path.dart' as path;
@@ -7,6 +7,14 @@ import '../utils/command_usage.dart';
 import '../utils/validators.dart';
 import '../utils/process_runner.dart';
 import '../constants.dart';
+
+/// A metro command that exited with a non-zero code during setup
+class _MetroFailure {
+  final String command;
+  final ProcessResult result;
+
+  _MetroFailure(this.command, this.result);
+}
 
 /// Handles the `nylo new <project_name>` command
 class NewCommand {
@@ -72,47 +80,149 @@ class NewCommand {
       exit(1);
     }
 
+    final totalTime = Stopwatch()..start();
+    final location = NyloConsole.friendlyPath(Directory.current.path);
+
     NyloConsole.writeBanner();
+    NyloConsole.write(
+      '  ${NyloConsole.bold('Creating $projectNameSnake')} '
+      '${NyloConsole.dim('in $location')}',
+    );
     NyloConsole.write('');
-    NyloConsole.writeTaskHeader('Creating new Nylo project: $projectNameSnake');
 
     // Step 1: Validate prerequisites
-    NyloConsole.writeSubtaskPending('Checking prerequisites...', isFirst: true);
-    await Validators.checkPrerequisites();
+    await _step('Checking prerequisites...', (spinner) async {
+      final check = await Validators.verifyPrerequisites();
+      if (!check.ok) {
+        spinner.fail('Prerequisites check failed', showDuration: false);
+        for (final problem in check.problems) {
+          NyloConsole.writeErrorDetail(problem);
+        }
+        exit(1);
+      }
+      spinner.succeed(
+        'Prerequisites verified',
+        detail: check.summary == null ? null : '(${check.summary})',
+        showDuration: false,
+      );
+    });
 
     // Step 2: Clone the template repository
-    final cloneSpinner = Spinner('');
-    cloneSpinner.start('Cloning Nylo template...');
-    await _cloneTemplate(projectPath);
-    cloneSpinner.stop('Template cloned');
+    await _step('Cloning Nylo template...', (spinner) async {
+      final result = await _cloneTemplate(projectPath);
+      if (result.exitCode != 0) {
+        spinner.fail('Failed to clone the Nylo template');
+        // Drop git's progress line so only the actual error is shown
+        final detail = result.stderr
+            .split('\n')
+            .where((line) => !line.startsWith('Cloning into '))
+            .join('\n');
+        NyloConsole.writeErrorDetail(_lastLines(detail));
+        NyloConsole.writeErrorDetail(
+          'Check your internet connection and try again.',
+        );
+        exit(1);
+      }
+      spinner.succeed('Template cloned');
+    });
 
     // Step 3: Remove .git folder for fresh start
-    final initSpinner = Spinner('');
-    initSpinner.start('Initializing project...');
-    await _removeGitFolder(projectPath);
-    initSpinner.stop('Project initialized');
+    await _step('Initializing project...', (spinner) async {
+      await _removeGitFolder(projectPath);
+      spinner.succeed('Project initialized');
+    });
 
     // Step 4: Update project configuration
-    final configSpinner = Spinner('');
-    configSpinner.start('Configuring project...');
-    await _setupEnvFile(projectPath);
-    await _updateProjectName(projectPath, projectNameSnake);
-    configSpinner.stop('Project configured');
+    await _step('Configuring project...', (spinner) async {
+      await _setupEnvFile(projectPath);
+      await _updateProjectName(projectPath, projectNameSnake);
+      spinner.succeed('Project configured');
+    });
 
     // Step 5: Run flutter pub get
-    final pubGetSpinner = Spinner('');
-    pubGetSpinner.start('Installing dependencies...');
-    await _runPubGet(projectPath);
-    pubGetSpinner.stop('Dependencies installed');
+    await _step('Installing dependencies...', (spinner) async {
+      final result = await _runPubGet(projectPath);
+      if (result.exitCode != 0) {
+        spinner.fail('Dependencies failed to install');
+        final output = result.stderr.trim().isNotEmpty
+            ? result.stderr
+            : result.stdout;
+        NyloConsole.writeErrorDetail(_lastLines(output));
+        _printIncompleteMessage(projectNameSnake, [
+          'flutter pub get',
+          'nylo metro make:key',
+          'nylo metro make:env',
+        ]);
+        exit(1);
+      }
+      spinner.succeed('Dependencies installed');
+    });
 
     // Step 6: Generate app key
-    final keySpinner = Spinner('');
-    keySpinner.start('Generating app key...');
-    await _generateAppKey(projectPath);
-    keySpinner.stop('App key generated');
+    await _step('Generating app key...', (spinner) async {
+      final failures = await _generateAppKey(projectPath);
+      if (failures.isEmpty) {
+        spinner.succeed('App key generated');
+        return;
+      }
+      spinner.warn('App key generation completed with warnings');
+      for (final failure in failures) {
+        final output = failure.result.stderr.trim().isNotEmpty
+            ? failure.result.stderr
+            : failure.result.stdout;
+        NyloConsole.writeWarningDetail(
+          '${failure.command} exited with code ${failure.result.exitCode}',
+        );
+        if (output.trim().isNotEmpty) {
+          NyloConsole.writeWarningDetail(_lastLines(output, 5));
+        }
+      }
+      final retry = failures
+          .map((failure) => 'nylo metro ${failure.command}')
+          .join(' && ');
+      NyloConsole.writeWarningDetail(
+        'To retry, run inside the project: $retry',
+      );
+    });
 
     // Show success message
-    _printSuccessMessage(projectNameSnake);
+    _printSuccessMessage(projectNameSnake, totalTime.elapsed);
+  }
+
+  /// Runs one setup step under a spinner.
+  ///
+  /// [action] is responsible for finishing the spinner (succeed/fail/warn).
+  /// If it throws instead, the step is marked as failed, the error is printed
+  /// and the process exits, so an unexpected exception never leaves a spinner
+  /// running or the cursor hidden.
+  Future<void> _step(
+    String message,
+    Future<void> Function(Spinner spinner) action,
+  ) async {
+    final spinner = Spinner()..start(message);
+    try {
+      await action(spinner);
+    } catch (error) {
+      if (spinner.isRunning) {
+        final label = message.replaceFirst(RegExp(r'\.\.\.$'), '');
+        spinner.fail('$label failed');
+      }
+      NyloConsole.writeErrorDetail('$error');
+      exit(1);
+    }
+  }
+
+  /// Returns the last [maxLines] non-empty lines of [text], prefixed with an
+  /// ellipsis line when output was truncated.
+  String _lastLines(String text, [int maxLines = 12]) {
+    final lines = text
+        .trim()
+        .split('\n')
+        .map((line) => line.trimRight())
+        .where((line) => line.trim().isNotEmpty)
+        .toList();
+    if (lines.length <= maxLines) return lines.join('\n');
+    return ['…', ...lines.sublist(lines.length - maxLines)].join('\n');
   }
 
   /// Validates the project name follows Dart package naming conventions
@@ -140,20 +250,14 @@ class NewCommand {
   }
 
   /// Clones the Nylo template repository
-  Future<void> _cloneTemplate(String targetPath) async {
-    final result = await ProcessRunner.run('git', [
+  Future<ProcessResult> _cloneTemplate(String targetPath) {
+    return ProcessRunner.run('git', [
       'clone',
       '--depth',
       '1',
       Constants.templateRepoUrl,
       targetPath,
     ]);
-
-    if (result.exitCode != 0) {
-      NyloConsole.writeError('Failed to clone template repository');
-      NyloConsole.writeError(result.stderr);
-      exit(1);
-    }
   }
 
   /// Removes the .git folder for a fresh start
@@ -381,15 +485,11 @@ class NewCommand {
   }
 
   /// Runs flutter pub get in the project directory
-  Future<void> _runPubGet(String projectPath) async {
-    final result = await ProcessRunner.run('flutter', [
+  Future<ProcessResult> _runPubGet(String projectPath) {
+    return ProcessRunner.run('flutter', [
       'pub',
       'get',
     ], workingDirectory: projectPath);
-
-    if (result.exitCode != 0) {
-      NyloConsole.writeWarning('flutter pub get completed with warnings');
-    }
   }
 
   /// Copies .env-example to .env
@@ -402,38 +502,70 @@ class NewCommand {
     }
   }
 
-  /// Generates app key using nylo_framework
-  Future<void> _generateAppKey(String projectPath) async {
-    final result = await ProcessRunner.run('dart', [
-      'run',
-      'nylo_framework:main',
-      'make:key',
-    ], workingDirectory: projectPath);
-    if (result.exitCode != 0 && result.stderr.trim().isNotEmpty) {
-      NyloConsole.writeWarning('App key generation completed with warnings');
+  /// Generates the app key (`make:key`) and the encrypted env file
+  /// (`make:env`) using nylo_framework. Returns the commands that failed.
+  Future<List<_MetroFailure>> _generateAppKey(String projectPath) async {
+    final failures = <_MetroFailure>[];
+
+    final keyResult = await _runMetro(projectPath, 'make:key');
+    if (keyResult.exitCode != 0 && keyResult.stderr.trim().isNotEmpty) {
+      failures.add(_MetroFailure('make:key', keyResult));
     }
 
-    final resultMakeEnv = await ProcessRunner.run('dart', [
+    final envResult = await _runMetro(projectPath, 'make:env');
+    if (envResult.exitCode != 0) {
+      failures.add(_MetroFailure('make:env', envResult));
+    }
+
+    return failures;
+  }
+
+  /// Runs a metro [command] inside the project
+  Future<ProcessResult> _runMetro(String projectPath, String command) {
+    return ProcessRunner.run('dart', [
       'run',
       'nylo_framework:main',
-      'make:env',
+      command,
     ], workingDirectory: projectPath);
-    if (resultMakeEnv.exitCode != 0) {
-      NyloConsole.writeWarning('App key generation completed with warnings');
-    }
   }
 
   /// Prints the success message with next steps
-  void _printSuccessMessage(String projectName) {
+  void _printSuccessMessage(String projectName, Duration elapsed) {
+    final title = NyloConsole.green(NyloConsole.bold('Success!'));
+    final duration = NyloConsole.formatDuration(elapsed);
+
     NyloConsole.write('');
-    NyloConsole.writeSuccess('Project "$projectName" created successfully!');
+    NyloConsole.write('  $title Created $projectName in $duration');
     NyloConsole.write('');
-    NyloConsole.write('Next steps:');
+    NyloConsole.write('  ${NyloConsole.bold('Next steps:')}');
     NyloConsole.write('');
-    NyloConsole.writeHighlight('  cd $projectName');
-    NyloConsole.writeHighlight('  flutter run');
+    NyloConsole.writeHighlight('    cd $projectName');
+    NyloConsole.writeHighlight('    flutter run');
     NyloConsole.write('');
-    NyloConsole.write('Documentation: ${Constants.docsUrl}');
+    NyloConsole.write('  Documentation: ${Constants.docsUrl}');
+    NyloConsole.write('');
+  }
+
+  /// Printed when the project directory exists but a later step failed, so
+  /// the user knows the work is not lost and how to finish the setup.
+  void _printIncompleteMessage(
+    String projectName,
+    List<String> remainingCommands,
+  ) {
+    final title = NyloConsole.yellow(NyloConsole.bold('Setup incomplete.'));
+
+    NyloConsole.write('');
+    NyloConsole.write(
+      '  $title Project $projectName was created, '
+      'but not every step finished.',
+    );
+    NyloConsole.write('');
+    NyloConsole.write('  ${NyloConsole.bold('To finish setting up, run:')}');
+    NyloConsole.write('');
+    NyloConsole.writeHighlight('    cd $projectName');
+    for (final command in remainingCommands) {
+      NyloConsole.writeHighlight('    $command');
+    }
     NyloConsole.write('');
   }
 }

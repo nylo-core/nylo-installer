@@ -73,19 +73,15 @@ void main() {
     });
 
     group('fetchLatestVersion', () {
-      test(
-        'should return a version string from pub.dev',
-        () async {
-          final checker = VersionChecker();
-          final version = await checker.fetchLatestVersion();
+      test('should return a version string from pub.dev', () async {
+        final checker = VersionChecker();
+        final version = await checker.fetchLatestVersion();
 
-          // This is a live network test - it may return null if offline
-          if (version != null) {
-            expect(version, matches(RegExp(r'^\d+\.\d+\.\d+')));
-          }
-        },
-        timeout: Timeout(Duration(seconds: 10)),
-      );
+        // This is a live network test - it may return null if offline
+        if (version != null) {
+          expect(version, matches(RegExp(r'^\d+\.\d+\.\d+')));
+        }
+      }, timeout: Timeout(Duration(seconds: 10)));
     });
 
     group('cache', () {

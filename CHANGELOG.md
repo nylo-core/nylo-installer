@@ -1,3 +1,17 @@
+## [1.9.0] - 2026-09-05
+
+### Added
+- `Spinner.succeed`, `Spinner.fail` and `Spinner.warn` (✓ / ✗ / ! completion lines, with an optional dimmed detail and the step duration), plus `Spinner.isRunning`, `Spinner.elapsed`, `Spinner.isInteractive` and `Spinner.interactiveOverride`
+- `NyloConsole` inline style helpers (`bold`, `dim`, `green`, `red`, `yellow`, `cyan`, `magenta`), `formatDuration`, `friendlyPath` (home directory shown as `~`), `writeErrorDetail` and `writeWarningDetail`
+- `Validators.verifyPrerequisites()` returns a `PrerequisiteCheck` (detected Git and Flutter versions plus a list of problems) without printing or exiting, and probes both tools concurrently. `Validators.parseGitVersion` and `Validators.parseFlutterVersion` extract version numbers from the tools' output. `checkPrerequisites()` behaves as before
+- Tests for the spinner, the formatting helpers, prerequisite parsing, and the rendering of a failed `nylo new` step
+
+### Changed
+- `nylo new` output redesign. Every step, including the prerequisites check, now runs under the spinner (the old `├ □ Checking prerequisites...` line never resolved). The spinner draws its first frame immediately instead of leaving a blank line between steps, shows the elapsed time on steps that take longer than a couple of seconds, and each completed step shows its duration. The header now names the project folder and where it is being created, the banner carries the installer version, the prerequisites line shows the detected Flutter and Git versions, and the closing summary reports the total time in place of the `[SUCCESS]` label
+- `nylo new` failure output: a failed step is rendered as a `✗` line with the underlying error indented beneath it (git's "Cloning into" progress noise is dropped) instead of being printed over a running spinner. When `flutter pub get` fails the command now exits 1 and prints the commands needed to finish the setup, instead of reporting success. App key warnings list the failing metro command and how to retry it
+- `Spinner` hides the cursor while animating and restores it when a step finishes or the command is interrupted with Ctrl+C (exit code 130), and degrades to plain line-based output when stdout is not a terminal (CI, piped output, or consoles without ANSI support). Completed steps in every command that uses the spinner (`clean`, `test`, `ios:pod-refresh`) show their duration when it is one second or more
+- Reformatted three test files with the current Dart formatter so the publish workflow's format check passes
+
 ## [1.8.0] - 2026-06-08
 
 ### Added

@@ -108,6 +108,45 @@ void main() {
       });
     });
 
+    group('new command failure output', () {
+      test('a failed step is rendered in the step list and exits 1', () async {
+        final tempDir = await Directory.systemTemp.createTemp('nylo_cli_');
+        final projectDir = Directory(
+          '${tempDir.path}${Platform.pathSeparator}my_app',
+        );
+        try {
+          final result = await Process.run(
+            'dart',
+            ['run', File('bin/nylo.dart').absolute.path, 'new', 'my_app'],
+            workingDirectory: tempDir.path,
+            environment: {
+              // Point git at a closed port so the clone fails fast without
+              // touching the network. On a machine without Flutter the
+              // prerequisites step fails first; both render the same way.
+              'HTTPS_PROXY': 'http://127.0.0.1:1',
+              'https_proxy': 'http://127.0.0.1:1',
+            },
+          );
+          final stdout = result.stdout as String;
+          final stderr = result.stderr as String;
+
+          expect(result.exitCode, equals(1), reason: 'stderr: $stderr');
+          expect(stdout, contains('Creating my_app'));
+          expect(stdout, contains('✗'));
+          expect(stdout, isNot(contains('[SUCCESS]')));
+          // Plain line-based output when stdout is not a terminal
+          expect(stdout, isNot(contains('\r')));
+          expect(stdout, isNot(contains('\x1B[?25l')));
+          // The underlying error is reported on stderr
+          expect(stderr.trim(), isNotEmpty);
+          // Nothing is left behind
+          expect(await projectDir.exists(), isFalse);
+        } finally {
+          await tempDir.delete(recursive: true);
+        }
+      }, timeout: const Timeout(Duration(minutes: 2)));
+    });
+
     group('help content', () {
       test('help should list available commands', () async {
         final result = await Process.run('dart', [
