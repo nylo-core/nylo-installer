@@ -1,3 +1,13 @@
+## [1.10.0] - 2026-09-06
+
+### Added
+- `NyloConsole.writeSuccessLine`: writes a command's closing `Success! <message>` line, indented to line up with the step list above it. `nylo new` now uses it for its summary, and a test covers the helper
+
+### Changed
+- `nylo clean` and `nylo ios:pod-refresh` now time the whole run and close with `Success! Project cleaned in <duration>` / `Success! iOS pods refreshed in <duration>`, matching `nylo new`, instead of the `[SUCCESS] ... successfully!` line
+- Bumped dependency version constraints: `analyzer` to `^14.3.0`, `glob` to `^2.2.0`, and `test` to `^1.32.0`
+- Refreshed `pubspec.lock` with updated transitive dependencies
+
 ## [1.9.0] - 2026-09-05
 
 ### Added

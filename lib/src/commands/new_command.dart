@@ -531,11 +531,10 @@ class NewCommand {
 
   /// Prints the success message with next steps
   void _printSuccessMessage(String projectName, Duration elapsed) {
-    final title = NyloConsole.green(NyloConsole.bold('Success!'));
     final duration = NyloConsole.formatDuration(elapsed);
 
     NyloConsole.write('');
-    NyloConsole.write('  $title Created $projectName in $duration');
+    NyloConsole.writeSuccessLine('Created $projectName in $duration');
     NyloConsole.write('');
     NyloConsole.write('  ${NyloConsole.bold('Next steps:')}');
     NyloConsole.write('');

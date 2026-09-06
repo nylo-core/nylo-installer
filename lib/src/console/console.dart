@@ -289,6 +289,12 @@ class NyloConsole {
     stdout.writeln('$_green$_bold[SUCCESS]$_reset $_green$message$_reset');
   }
 
+  /// Write the closing line of a command that finished successfully
+  /// (`Success! <message>`), indented to line up with the step list above it.
+  static void writeSuccessLine(String message) {
+    stdout.writeln('  ${green(bold('Success!'))} $message');
+  }
+
   /// Write an error message (red)
   static void writeError(String message) {
     stderr.writeln('$_red$_bold[ERROR]$_reset $_red$message$_reset');

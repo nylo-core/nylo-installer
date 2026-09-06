@@ -186,6 +186,13 @@ void main() {
         expect(() => NyloConsole.writeSuccess('success'), returnsNormally);
       });
 
+      test('writeSuccessLine should not throw', () {
+        expect(
+          () => NyloConsole.writeSuccessLine('Created my_app in 18s'),
+          returnsNormally,
+        );
+      });
+
       test('writeError should not throw', () {
         expect(() => NyloConsole.writeError('error'), returnsNormally);
       });

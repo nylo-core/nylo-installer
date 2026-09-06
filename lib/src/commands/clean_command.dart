@@ -72,6 +72,8 @@ class CleanCommand {
       return '[$currentStep/$totalSteps]';
     }
 
+    final totalTime = Stopwatch()..start();
+
     NyloConsole.writeBanner();
     NyloConsole.write('');
     NyloConsole.writeInfo('Cleaning project...');
@@ -146,7 +148,9 @@ class CleanCommand {
     }
 
     NyloConsole.write('');
-    NyloConsole.writeSuccess('Project cleaned successfully!');
+    NyloConsole.writeSuccessLine(
+      'Project cleaned in ${NyloConsole.formatDuration(totalTime.elapsed)}',
+    );
   }
 
   /// Remove iOS build artifacts (Pods, .symlinks, Podfile.lock)

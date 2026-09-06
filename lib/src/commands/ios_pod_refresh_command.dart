@@ -58,6 +58,8 @@ class IosPodRefreshCommand {
       exit(1);
     }
 
+    final totalTime = Stopwatch()..start();
+
     NyloConsole.writeBanner();
     NyloConsole.write('');
     NyloConsole.writeInfo('Refreshing iOS pods...');
@@ -82,7 +84,9 @@ class IosPodRefreshCommand {
     }
 
     NyloConsole.write('');
-    NyloConsole.writeSuccess('iOS pods refreshed successfully!');
+    NyloConsole.writeSuccessLine(
+      'iOS pods refreshed in ${NyloConsole.formatDuration(totalTime.elapsed)}',
+    );
   }
 
   /// Remove iOS build artifacts (Pods, .symlinks, Podfile.lock)

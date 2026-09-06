@@ -8,7 +8,7 @@ class Constants {
   static const String templateRepoUrl = 'https://github.com/nylo-core/nylo';
 
   /// Installer version
-  static const String version = '1.9.0';
+  static const String version = '1.10.0';
 
   /// Documentation URL
   static const String docsUrl = 'https://nylo.dev/docs';
