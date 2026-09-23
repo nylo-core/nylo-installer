@@ -1,3 +1,12 @@
+## [1.11.0] - 2026-09-23
+
+### Added
+- `NewCommand.rewriteTestImports` and `NewCommand.updateTestImports`, the helpers `nylo new` uses to point a new project's test files at its package. The `nylo new` test-import tests now call them instead of a copy of their logic
+
+### Changed
+- `nylo new` also renames imports of the template's own package in the new project's test files, e.g. `package:flutter_app/...` becomes `package:my_app/...`, reading the template's package name from its `pubspec.yaml` before renaming it. The template's tests can then import the app by package name and run in the template repository itself. Root-relative `import '/...'` imports are still rewritten, so older templates keep working
+- The publish workflow uses `actions/checkout@v5` (was `@v3`)
+
 ## [1.10.0] - 2026-09-06
 
 ### Added

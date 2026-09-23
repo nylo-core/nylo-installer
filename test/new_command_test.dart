@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:nylo_installer/nylo_installer.dart';
 import 'package:path/path.dart' as path;
 import 'package:test/test.dart';
 
@@ -585,107 +586,132 @@ void main() {
       });
 
       group('test imports', () {
-        test(
-          'should update root-relative imports to package imports',
-          () async {
-            final testDir = Directory(path.join(tempDir.path, 'test'));
-            await testDir.create(recursive: true);
-
-            final testFilePath = path.join(testDir.path, 'widget_test.dart');
-            await File(testFilePath).writeAsString(
-              "import '/app/controllers/home_controller.dart';\n"
-              "import '/resources/pages/home_page.dart';\n"
-              "import 'package:flutter_test/flutter_test.dart';\n",
-            );
-
-            final testFile = File(testFilePath);
-            String content = await testFile.readAsString();
-            content = content.replaceAll(
-              "import '/",
-              "import 'package:my_app/",
-            );
-            await testFile.writeAsString(content);
-
-            final updatedContent = await testFile.readAsString();
-            expect(
-              updatedContent,
-              contains(
-                "import 'package:my_app/app/controllers/home_controller.dart'",
-              ),
-            );
-            expect(
-              updatedContent,
-              contains(
-                "import 'package:my_app/resources/pages/home_page.dart'",
-              ),
-            );
-            // Should not touch package imports
-            expect(
-              updatedContent,
-              contains("import 'package:flutter_test/flutter_test.dart'"),
-            );
-            expect(updatedContent, isNot(contains("import '/")));
-          },
-        );
-
-        test('should update imports in nested test directories', () async {
-          final nestedDir = Directory(path.join(tempDir.path, 'test', 'unit'));
-          await nestedDir.create(recursive: true);
-
-          final testFilePath = path.join(
-            nestedDir.path,
-            'controller_test.dart',
+        test('should update root-relative imports to package imports', () {
+          final updated = NewCommand.rewriteTestImports(
+            "import '/app/controllers/home_controller.dart';\n"
+            "import '/resources/pages/home_page.dart';\n"
+            "import 'package:flutter_test/flutter_test.dart';\n",
+            projectName: 'my_app',
+            templateName: 'flutter_app',
           );
-          await File(
-            testFilePath,
-          ).writeAsString("import '/app/controllers/home_controller.dart';\n");
 
-          // Simulate recursive list + update
-          final testDir = Directory(path.join(tempDir.path, 'test'));
-          await for (final entity in testDir.list(recursive: true)) {
-            if (entity is File && entity.path.endsWith('.dart')) {
-              String content = await entity.readAsString();
-              if (content.contains("import '/")) {
-                content = content.replaceAll(
-                  "import '/",
-                  "import 'package:my_app/",
-                );
-                await entity.writeAsString(content);
-              }
-            }
-          }
-
-          final updatedContent = await File(testFilePath).readAsString();
           expect(
-            updatedContent,
+            updated,
             contains(
               "import 'package:my_app/app/controllers/home_controller.dart'",
             ),
           );
+          expect(
+            updated,
+            contains("import 'package:my_app/resources/pages/home_page.dart'"),
+          );
+          // Should not touch package imports
+          expect(
+            updated,
+            contains("import 'package:flutter_test/flutter_test.dart'"),
+          );
+          expect(updated, isNot(contains("import '/")));
         });
 
-        test('should skip files without root-relative imports', () async {
-          final testDir = Directory(path.join(tempDir.path, 'test'));
-          await testDir.create(recursive: true);
+        test('should rename imports of the template package', () {
+          final updated = NewCommand.rewriteTestImports(
+            "import 'package:flutter_app/bootstrap/providers.dart';\n"
+            'import "package:flutter_app/resources/pages/home_page.dart";\n'
+            "import 'package:flutter_app_extras/extras.dart';\n"
+            "import 'package:flutter_test/flutter_test.dart';\n",
+            projectName: 'my_app',
+            templateName: 'flutter_app',
+          );
 
-          final testFilePath = path.join(testDir.path, 'clean_test.dart');
-          const originalContent =
+          expect(
+            updated,
+            contains("import 'package:my_app/bootstrap/providers.dart'"),
+          );
+          expect(
+            updated,
+            contains('import "package:my_app/resources/pages/home_page.dart"'),
+          );
+          // Only the template's own package, not one whose name starts with it
+          expect(
+            updated,
+            contains("import 'package:flutter_app_extras/extras.dart'"),
+          );
+          expect(
+            updated,
+            contains("import 'package:flutter_test/flutter_test.dart'"),
+          );
+          expect(updated, isNot(contains('package:flutter_app/')));
+        });
+
+        test('should keep package imports without a template name', () {
+          const content = "import 'package:flutter_app/main.dart';\n";
+
+          expect(
+            NewCommand.rewriteTestImports(content, projectName: 'my_app'),
+            equals(content),
+          );
+        });
+
+        test('should keep imports when the project keeps the name', () {
+          const content = "import 'package:flutter_app/main.dart';\n";
+
+          expect(
+            NewCommand.rewriteTestImports(
+              content,
+              projectName: 'flutter_app',
+              templateName: 'flutter_app',
+            ),
+            equals(content),
+          );
+        });
+
+        test('should skip files without imports of the app', () {
+          const content =
               "import 'package:flutter_test/flutter_test.dart';\n"
               "import 'package:nylo/main.dart';\n";
-          await File(testFilePath).writeAsString(originalContent);
 
-          final testFile = File(testFilePath);
-          String content = await testFile.readAsString();
-          if (content.contains("import '/")) {
-            content = content.replaceAll(
-              "import '/",
-              "import 'package:my_app/",
-            );
-            await testFile.writeAsString(content);
-          }
+          expect(
+            NewCommand.rewriteTestImports(
+              content,
+              projectName: 'my_app',
+              templateName: 'flutter_app',
+            ),
+            equals(content),
+          );
+        });
 
-          final updatedContent = await testFile.readAsString();
-          expect(updatedContent, equals(originalContent));
+        test('should update test files in nested directories', () async {
+          final nestedDir = Directory(path.join(tempDir.path, 'test', 'unit'));
+          await nestedDir.create(recursive: true);
+          final nestedFile = File(
+            path.join(nestedDir.path, 'controller_test.dart'),
+          );
+          await nestedFile.writeAsString(
+            "import 'package:flutter_app/app/controllers/home_controller.dart';\n",
+          );
+          final legacyFile = File(
+            path.join(tempDir.path, 'test', 'widget_test.dart'),
+          );
+          await legacyFile.writeAsString(
+            "import '/resources/pages/home_page.dart';\n",
+          );
+
+          await NewCommand.updateTestImports(
+            tempDir.path,
+            'my_app',
+            templateName: 'flutter_app',
+          );
+
+          expect(
+            await nestedFile.readAsString(),
+            equals(
+              "import 'package:my_app/app/controllers/home_controller.dart';\n",
+            ),
+          );
+          expect(
+            await legacyFile.readAsString(),
+            equals("import 'package:my_app/resources/pages/home_page.dart';\n"),
+          );
         });
       });
     });

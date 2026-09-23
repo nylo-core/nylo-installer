@@ -273,10 +273,15 @@ class NewCommand {
     String projectPath,
     String projectName,
   ) async {
-    // Update pubspec.yaml
+    // Update pubspec.yaml, remembering the template's own package name
+    String? templateName;
     final pubspecFile = File(path.join(projectPath, 'pubspec.yaml'));
     if (await pubspecFile.exists()) {
       String content = await pubspecFile.readAsString();
+      templateName = RegExp(
+        r'^name:\s*(\w+)',
+        multiLine: true,
+      ).firstMatch(content)?.group(1);
       content = content.replaceFirst(
         RegExp(r'^name:\s*\w+', multiLine: true),
         'name: $projectName',
@@ -298,7 +303,11 @@ class NewCommand {
     await _updateAppTitle(projectPath, projectName);
 
     // Update test file imports
-    await _updateTestImports(projectPath, projectName);
+    await updateTestImports(
+      projectPath,
+      projectName,
+      templateName: templateName,
+    );
   }
 
   /// Updates Android-specific configuration
@@ -462,26 +471,52 @@ class NewCommand {
     }
   }
 
-  /// Updates test file imports from `import '/` to `import 'package:<name>/`
-  Future<void> _updateTestImports(
+  /// Points the imports of the app in [projectPath]'s test files at
+  /// [projectName], see [rewriteTestImports].
+  static Future<void> updateTestImports(
     String projectPath,
-    String projectName,
-  ) async {
+    String projectName, {
+    String? templateName,
+  }) async {
     final testDir = Directory(path.join(projectPath, 'test'));
     if (!await testDir.exists()) return;
 
     await for (final entity in testDir.list(recursive: true)) {
       if (entity is File && entity.path.endsWith('.dart')) {
-        String content = await entity.readAsString();
-        if (content.contains("import '/")) {
-          content = content.replaceAll(
-            "import '/",
-            "import 'package:$projectName/",
-          );
-          await entity.writeAsString(content);
+        final content = await entity.readAsString();
+        final updated = rewriteTestImports(
+          content,
+          projectName: projectName,
+          templateName: templateName,
+        );
+        if (updated != content) {
+          await entity.writeAsString(updated);
         }
       }
     }
+  }
+
+  /// Rewrites a test file's imports of the app to `package:<projectName>/`.
+  ///
+  /// Handles both forms a template's tests use: `package:<templateName>/`
+  /// imports, which resolve in the template itself, and root-relative
+  /// `import '/...'`, which older templates used and only `nylo new` resolves.
+  static String rewriteTestImports(
+    String content, {
+    required String projectName,
+    String? templateName,
+  }) {
+    String updated = content.replaceAll(
+      "import '/",
+      "import 'package:$projectName/",
+    );
+    if (templateName != null && templateName != projectName) {
+      updated = updated.replaceAllMapped(
+        RegExp('([\'"])package:${RegExp.escape(templateName)}/'),
+        (match) => '${match[1]}package:$projectName/',
+      );
+    }
+    return updated;
   }
 
   /// Runs flutter pub get in the project directory
